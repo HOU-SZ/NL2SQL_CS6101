@@ -1,0 +1,11 @@
+{
+    "name": "xxx",
+    "display_name": "xxx",
+    "description": "新能源，燃油车市场销量数据",
+    "driver": "mysql", 
+    "username": "xxxx",
+    "password": "xxxx",
+    "host": "xxxx",
+    "port": "3306",
+    "tables": ["new_energy_vehicle_sales", "nev_energy_model_sales", "nev_energy_city_sales"]
+}

@@ -4,7 +4,7 @@ Implement [MAC-SQL](https://github.com/wbbeyourself/MAC-SQL) as a backend servic
 ## Some changes:
  - Change database schema representation to code representation
  - Change foreign keys representation to dictionary representation
- - Use [DIN-SQL](https://github.com/MohammadrezaPourreza/Few-shot-NL2SQL-with-prompting) self-correction in refiner
+ - Use [DIN-SQL](https://github.com/MohammadrezaPourreza/Few-shot-NL2SQL-with-prompting) self-correction in the refiner
 
 ## Setup
 Set up environment
@@ -19,7 +19,7 @@ Set LLM
 
 Set Database
  - Change the ds_url in [app/app.py](app/app.py) to your database url
- - Change the corresponding content in the [datasource.json](datasource.json)
+ - Change the corresponding content in the [app/datasource.json](app/datasource.json)
 
 
 ## Run

@@ -16,7 +16,7 @@ def get_tokenizer_model(model_name):
 
 
 class sqlcoder:
-    def __init__(self, model_name="../sqlcoder-7b-2"):
+    def __init__(self, model_name="../../sqlcoder-7b-2"):
         self.tokenizer, self.model = get_tokenizer_model(model_name)
 
     def generate(self, prompt):

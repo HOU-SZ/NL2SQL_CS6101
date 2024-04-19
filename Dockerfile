@@ -9,18 +9,19 @@ RUN wget \
     https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
     && mkdir /root/.conda \
     && bash Miniconda3-latest-Linux-x86_64.sh -b \
-    && rm -f Miniconda3-latest-Linux-x86_64.sh 
-RUN conda --version
+    && rm -f Miniconda3-latest-Linux-x86_64.sh \
+    && echo "Running $(conda --version)" \
+    && conda init bash \
+    && . /root/.bashrc \
+    && conda update conda \
+    && conda create -n nl2sql_cs6101 python=3.10 -y \
+    && conda activate nl2sql_cs6101
 
-RUN git clone https://github.com/HOU-SZ/NL2SQL_CS6101.git
-RUN cd NL2SQL_CS6101
-RUN conda create -n nl2sql_cs6101 python=3.10
-RUN conda activate nl2sql_cs6101
+WORKDIR /app
+COPY . .
 RUN pip install -r requirements.txt
-
-RUN pip install -U "huggingface_hub[cli]"
-RUN huggingface-cli download defog/sqlcoder-7b-2 --local-dir sqlcoder-7b-2
-RUN cd app
+RUN pwd
+WORKDIR /app/app
 
 CMD ["python", "app.py"]
 

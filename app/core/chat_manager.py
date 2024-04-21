@@ -1,6 +1,6 @@
 from core.agents import Selector, Decomposer, Refiner
 from core.const import SELECTOR_NAME, DECOMPOSER_NAME, REFINER_NAME, SYSTEM_NAME, MAX_ROUND
-from core.llm import sqlcoder, GPT
+from core.llm import sqlcoder, GPT, DeepSeek
 import time
 
 
@@ -11,10 +11,12 @@ class ChatManager(object):
         self.tables = tables
         self.table_info = table_info
         # self.llm = sqlcoder()
-        self.llm = GPT()
+        # self.llm = GPT()
+        self.llm = DeepSeek()
         self.chat_group = [
             Selector(db_name, db_description, tables, table_info, self.llm),
-            Decomposer(db_name, db_description, tables, table_info, self.llm, prompt_type),
+            Decomposer(db_name, db_description, tables,
+                       table_info, self.llm, prompt_type),
             Refiner(db_name, db_description, tables, table_info, self.llm)
         ]
 

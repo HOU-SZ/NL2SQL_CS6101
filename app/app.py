@@ -1,6 +1,5 @@
 import json
 from flask import Flask, request
-from nl2sql_hub.datasource import DataSource, get_url
 from langchain.sql_database import SQLDatabase
 import os
 
@@ -8,6 +7,7 @@ from core.service import run_generation
 
 for_submit = True
 if for_submit:
+    from nl2sql_hub.datasource import DataSource, get_url
     datasource_path = os.getenv("NL2SQL_DATASOURCE_PATH")
     with open(os.path.join(datasource_path, "datasource.json"), "r") as f:
         ds = json.load(f)

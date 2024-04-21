@@ -1,34 +1,32 @@
 import json
 from flask import Flask, request
-# from nl2sql_hub.datasource import DataSource, get_url
+from nl2sql_hub.datasource import DataSource, get_url
 from langchain.sql_database import SQLDatabase
 import os
 
 from core.service import run_generation
 
-# datasource_path = os.getenv("NL2SQL_DATASOURCE_PATH")
-# # datasource_path = '/datasource'
-
-# with open(os.path.join(datasource_path, "datasource.json"), "r") as f:
-#     ds = json.load(f)
-#     print(f"load datasource from {datasource_path}, content: \n{ds}\n")
-#     db_name = ds.get("name")
-#     db_description = ds.get("description")
-#     db_tables = ds.get("tables")
-#     datasource = DataSource.parse_obj(ds)
-
-with open("datasource.json", "r", encoding='UTF-8') as f:
-    ds = json.load(f)
-    print(f"load datasource from datasource.json, content: \n{ds}\n")
-    db_name = ds.get("name")
-    db_description = ds.get("description")
-    db_tables = ds.get("tables")
-    datasource = ds
-
-
-# ds_url = get_url(datasource)
-ds_url = "sqlite:///C:/sqlite/concert_singer.db"
-print(f"datasource url: {ds_url}")
+for_submit = True
+if for_submit:
+    datasource_path = os.getenv("NL2SQL_DATASOURCE_PATH")
+    with open(os.path.join(datasource_path, "datasource.json"), "r") as f:
+        ds = json.load(f)
+        print(f"load datasource from {datasource_path}, content: \n{ds}\n")
+        db_name = ds.get("name")
+        db_description = ds.get("description")
+        db_tables = ds.get("tables")
+        datasource = DataSource.parse_obj(ds)
+    ds_url = get_url(datasource)
+else:
+    with open("datasource.json", "r", encoding='UTF-8') as f:
+        ds = json.load(f)
+        print(f"load datasource from datasource.json, content: \n{ds}\n")
+        db_name = ds.get("name")
+        db_description = ds.get("description")
+        db_tables = ds.get("tables")
+        datasource = ds
+        ds_url = "sqlite:///./concert_singer.db"
+    print(f"datasource url: {ds_url}")
 
 db_tool = SQLDatabase.from_uri(database_uri=ds_url)
 
@@ -73,7 +71,8 @@ def predict():
     # print(f"Question: {question}")
 
     # sql_query = "SELECT ......"
-    sql_query = run_generation(question, db_name, db_description, tables, table_info)
+    sql_query = run_generation(
+        question, db_name, db_description, tables, table_info)
     return {
         "success": True,
         "sql_queries": [
@@ -83,4 +82,4 @@ def predict():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=18080)
+    app.run(host="0.0.0.0", debug=True, port=18080)

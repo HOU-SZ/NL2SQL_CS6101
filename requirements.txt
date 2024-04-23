@@ -60,3 +60,17 @@ typing_extensions==4.11.0
 urllib3==2.2.1
 Werkzeug==3.0.2
 yarl==1.9.4
+
+
+pgvector==0.2.3
+asyncpg==0.28.0
+python-dotenv==1.0.0
+nest_asyncio==1.5.8
+pandas==2.1.1
+text-generation==0.6.1
+SQLAlchemy==2.0.22
+loguru==0.7.2
+pymysql==1.1.0
+cryptography==41.0.5
+clickhouse-sqlalchemy@https://nexus.4pd.io/repository/pypi-dev/packages/clickhouse-sqlalchemy/0.2.4/clickhouse-sqlalchemy-0.2.4.tar.gz
+psycopg2-binary==2.9.9

@@ -5,14 +5,15 @@ import time
 
 
 class ChatManager(object):
-    def __init__(self, db_name, db_description, tables, table_info, prompt_type):
+    def __init__(self, db_name, db_description, tables, table_info, prompt_type, llm):
         self.db_name = db_name
         self.db_description = db_description
         self.tables = tables
         self.table_info = table_info
         # self.llm = sqlcoder()
         # self.llm = GPT()
-        self.llm = DeepSeek()
+        # self.llm = DeepSeek()
+        self.llm = llm
         self.chat_group = [
             Selector(db_name, db_description, tables, table_info, self.llm),
             Decomposer(db_name, db_description, tables,

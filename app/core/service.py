@@ -14,7 +14,7 @@ def init_message(question, db_name, db_description, tables, table_info):
     return user_message
 
 
-def run_generation(question, db_name, db_description, tables, table_info):
+def run_generation(question, db_name, db_description, tables, table_info, llm):
     print("Start generating SQL query...")
     print("Question: ", question)
     print("Database name: ", db_name)
@@ -23,7 +23,8 @@ def run_generation(question, db_name, db_description, tables, table_info):
     # print("Table info: ", table_info)
 
     prompt_type = "bird"
-    chat_manager = ChatManager(db_name, db_description, tables, table_info, prompt_type)
+    chat_manager = ChatManager(
+        db_name, db_description, tables, table_info, prompt_type, llm)
 
     user_message = init_message(
         question, db_name, db_description, tables, table_info)

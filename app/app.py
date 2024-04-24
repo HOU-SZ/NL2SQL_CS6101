@@ -2,9 +2,11 @@ import json
 from flask import Flask, request
 from langchain.sql_database import SQLDatabase
 import os
-
 from core.service import run_generation
+from core.llm import sqlcoder, GPT, DeepSeek
+app = Flask(__name__)
 
+print("=============Starting service==============")
 for_submit = True
 if for_submit:
     from nl2sql_hub.datasource import DataSource, get_url
@@ -26,8 +28,8 @@ else:
         db_tables = ds.get("tables")
         datasource = ds
         ds_url = "sqlite:///./concert_singer.db"
-    print(f"datasource url: {ds_url}")
 
+print(f"datasource url: {ds_url}\n")
 db_tool = SQLDatabase.from_uri(database_uri=ds_url)
 
 
@@ -50,7 +52,7 @@ for table in tables:
     print(f"table_info: {cur_table_info}")  # 输出建表语句以及3条数据示例
 print("lengeth of table_info: ", len(table_info))
 
-app = Flask(__name__)
+llm = sqlcoder()
 
 
 @ app.route("/")
@@ -66,13 +68,21 @@ def predict():
             "success": False,
             "message": "Content-Type must be application/json"
         }
+    print("request:", request)
     request_json = request.json
+    print("request_json:", request_json)
     question = request_json.get("natural_language_query")
-    # print(f"Question: {question}")
+    print(f"Question: {question}")
 
     # sql_query = "SELECT ......"
-    sql_query = run_generation(
-        question, db_name, db_description, tables, table_info)
+    try:
+        sql_query = run_generation(
+            question, db_name, db_description, tables, table_info, llm)
+    except Exception as e:
+        return {
+            "success": False,
+            "message": str(e)
+        }
     return {
         "success": True,
         "sql_queries": [

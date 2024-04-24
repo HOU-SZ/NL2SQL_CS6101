@@ -48,10 +48,10 @@ def _prep_regexes(self):
             [
                 re.escape(s)
                 for s in (
-                self.preparer.initial_quote,
-                _final,
-                self.preparer._escape_identifier(_final),
-            )
+                    self.preparer.initial_quote,
+                    _final,
+                    self.preparer._escape_identifier(_final),
+                )
             ],
         )
     )
@@ -217,6 +217,7 @@ def _prep_regexes(self):
 
 MySQLTableDefinitionParser._prep_regexes = _prep_regexes
 
+
 class DSColumn(BaseModel):
     name: str
     display_name: str | None = None
@@ -243,7 +244,7 @@ class DataSource(BaseModel):
     host: str
     port: str
     extra_config: dict | None = None
-    connect_type: str | None
+    connect_type: str | None = None
 
     tables: list[str]
 

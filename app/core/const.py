@@ -24,46 +24,46 @@ Here is a typical example:
 【DB_ID】 banking_system
 【Schema】
 CREATE TABLE account (
-    account_id INT PRIMARY KEY, -- the id of the account
-    district_id INT, -- location of branch
-    frequency VARCHAR(50), -- frequency of the acount
-    date DATE -- the creation date of the account
+    account_id INT PRIMARY KEY, COMMENT the id of the account
+    district_id INT, COMMENT location of branch
+    frequency VARCHAR(50), COMMENT frequency of the acount
+    date DATE COMMENT the creation date of the account
     FOREIGN KEY (district_id) REFERENCES district(district_id)
 );
 
 CREATE TABLE client (
-    client_id INT PRIMARY KEY, -- the unique number
-    gender CHAR(1), -- gender. F: female . M: male
-    birth_date DATE, -- birth date
-    district_id INT -- location of branch
+    client_id INT PRIMARY KEY, COMMENT the unique number
+    gender CHAR(1), COMMENT gender. F: female . M: male
+    birth_date DATE, COMMENT birth date
+    district_id INT COMMENT location of branch
     FOREIGN KEY (district_id) REFERENCES district(district_id)
 );
 
 CREATE TABLE loan (
-    loan_id INT PRIMARY KEY, -- the id number identifying the loan data
-    account_id INT, -- the id number identifying the account
-    date DATE, -- the date when the loan is approved
-    amount INT, -- the amount of the loan
-    duration INT, -- the duration the loan
-    payments INT, -- the payments the loan
-    status CHAR(1) -- the status of the loan
+    loan_id INT PRIMARY KEY, COMMENT the id number identifying the loan data
+    account_id INT, COMMENT the id number identifying the account
+    date DATE, COMMENT the date when the loan is approved
+    amount INT, COMMENT the amount of the loan
+    duration INT, COMMENT the duration the loan
+    payments INT, COMMENT the payments the loan
+    status CHAR(1) COMMENT the status of the loan
     FOREIGN KEY (account_id) REFERENCES account(account_id)
 );
 
 CREATE TABLE district (
-    district_id INT PRIMARY KEY, -- location of branch
-    A2 FLOAT, -- area in square kilometers
-    A4 INT, -- number of inhabitants
-    A5 INT, -- number of households
-    A6 FLOAT, -- literacy rate
-    A7 INT, -- number of entrepreneurs
-    A8 INT, -- number of cities
-    A9 INT, -- number of schools
-    A10 INT, -- number of hospitals
-    A11 INT, -- average salary
-    A12 FLOAT, -- poverty rate
-    A13 FLOAT, -- unemployment rate
-    A15 INT -- number of crimes
+    district_id INT PRIMARY KEY, COMMENT location of branch
+    A2 FLOAT, COMMENT area in square kilometers
+    A4 INT, COMMENT number of inhabitants
+    A5 INT, COMMENT number of households
+    A6 FLOAT, COMMENT literacy rate
+    A7 INT, COMMENT number of entrepreneurs
+    A8 INT, COMMENT number of cities
+    A9 INT, COMMENT number of schools
+    A10 INT, COMMENT number of hospitals
+    A11 INT, COMMENT average salary
+    A12 FLOAT, COMMENT poverty rate
+    A13 FLOAT, COMMENT unemployment rate
+    A15 INT COMMENT number of crimes
 );
 【Foreign keys】
 client: ['client.district_id = district.district_id']
@@ -206,19 +206,19 @@ When generating SQL, we should always consider constraints:
 
 【Database schema】
 CREATE TABLE frpm (
-    CDSCode VARCHAR(50) PRIMARY KEY, -- CDSCode
-    Charter School (Y/N), -- 0: N;. 1: Y
-    Enrollment (Ages 5-17) FLOAT, -- Enrollment (Ages 5-17)
-    Free Meal Count (Ages 5-17) FLOAT -- Free Meal Count (Ages 5-17)
+    CDSCode VARCHAR(50) PRIMARY KEY, COMMENT CDSCode
+    Charter School (Y/N), COMMENT 0: N;. 1: Y
+    Enrollment (Ages 5-17) FLOAT, COMMENT Enrollment (Ages 5-17)
+    Free Meal Count (Ages 5-17) FLOAT COMMENT Free Meal Count (Ages 5-17)
     FOREIGN KEY (CDSCode) REFERENCES satscores(cds)
 );
 
 CREATE TABLE satscores (
-    cds VARCHAR(50) PRIMARY KEY, -- California Department Schools
-    sname VARCHAR(50), -- school name
-    NumTstTakr INT, -- number of test takers in each school
-    AvgScrMath INT, -- average scores in Math
-    NumGE1500 INT -- Number of Test Takers Whose Total SAT Scores Are Greater or Equal to 1500
+    cds VARCHAR(50) PRIMARY KEY, COMMENT California Department Schools
+    sname VARCHAR(50), COMMENT school name
+    NumTstTakr INT, COMMENT number of test takers in each school
+    AvgScrMath INT, COMMENT average scores in Math
+    NumGE1500 INT COMMENT Number of Test Takers Whose Total SAT Scores Are Greater or Equal to 1500
 );
 【Foreign keys】
 frpm: ['frpm.CDSCode=satscores.cds']
@@ -263,25 +263,25 @@ Question Solved.
 
 【Database schema】
 CREATE TABLE account (
-    account_id INT PRIMARY KEY, -- the id of the account
-    district_id INT, -- location of branch
-    frequency VARCHAR(50), -- frequency of the acount
-    date DATE -- the creation date of the account
+    account_id INT PRIMARY KEY, COMMENT the id of the account
+    district_id INT, COMMENT location of branch
+    frequency VARCHAR(50), COMMENT frequency of the acount
+    date DATE COMMENT the creation date of the account
     FOREIGN KEY (district_id) REFERENCES district(district_id)
 );
 
 CREATE TABLE client (
-    client_id INT PRIMARY KEY, -- the unique number
-    gender CHAR(1), -- gender. F: female . M: male
-    birth_date DATE, -- birth date
-    district_id INT -- location of branch
+    client_id INT PRIMARY KEY, COMMENT the unique number
+    gender CHAR(1), COMMENT gender. F: female . M: male
+    birth_date DATE, COMMENT birth date
+    district_id INT COMMENT location of branch
     FOREIGN KEY (district_id) REFERENCES district(district_id)
 );
 
 CREATE TABLE district (
-    district_id INT PRIMARY KEY, -- location of branch
-    A4 INT, -- number of inhabitants
-    A11 INT, -- average salary
+    district_id INT PRIMARY KEY, COMMENT location of branch
+    A4 INT, COMMENT number of inhabitants
+    A11 INT, COMMENT average salary
 );
 【Foreign keys】
 client: ['client.district_id = district.district_id']
@@ -351,7 +351,7 @@ When you find an answer, verify the answer carefully. Include verifiable evidenc
 - If [Value examples] of <column> has 'None' or None, use `JOIN <table>` or `WHERE <column> is NOT NULL` is better
 - If use `ORDER BY <column> ASC|DESC`, add `GROUP BY <column>` before to select distinct values
 【Query】
--- {query}
+COMMENT {query}
 【Evidence】
 {evidence}
 【Database info】

@@ -2,6 +2,7 @@ import os
 import openai
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
+import modelscope
 
 
 def get_tokenizer_model(model_name):
@@ -115,9 +116,9 @@ class GPT:
 
 class DeepSeek:
     def __init__(self, model_name="../deepseek-coder-33b-instruct"):
-        self.tokenizer = AutoTokenizer.from_pretrained(
+        self.tokenizer = modelscope.AutoTokenizer.from_pretrained(
             model_name, trust_remote_code=True)
-        self.model = AutoModelForCausalLM.from_pretrained(
+        self.model = modelscope.AutoModelForCausalLM.from_pretrained(
             model_name, use_cache=True, trust_remote_code=True, torch_dtype=torch.bfloat16).cuda()
 
     def generate(self, prompt):

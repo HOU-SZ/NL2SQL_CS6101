@@ -79,6 +79,7 @@ def predict():
         sql_query = run_generation(
             question, db_name, db_description, tables, table_info, llm)
     except Exception as e:
+        print("Error: ", e)
         return {
             "success": False,
             "message": str(e)

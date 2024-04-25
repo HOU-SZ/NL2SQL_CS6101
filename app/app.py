@@ -1,12 +1,22 @@
 import json
+import sys
 from flask import Flask, request
 from langchain.sql_database import SQLDatabase
+import argparse
 import os
 from core.service import run_generation
 from core.llm import sqlcoder, GPT, DeepSeek
 app = Flask(__name__)
 
 print("=============Starting service==============")
+parser = argparse.ArgumentParser()
+parser.add_argument("--model_name", type=str, choices=[
+                    "gpt-3.5-turbo", "sqlcoder-7b-2", "deepseek-coder-33b-instruct"], default="sqlcoder-7b-2")
+args = parser.parse_args()
+model_name = args.model_name
+print(f"model_name: {model_name}")
+
+
 for_submit = True
 if for_submit:
     from nl2sql_hub.datasource import DataSource, get_url
@@ -52,7 +62,18 @@ for table in tables:
     print(f"table_info: {cur_table_info}")  # 输出建表语句以及3条数据示例
 print("lengeth of table_info: ", len(table_info))
 
-llm = sqlcoder()
+
+model_dict = {
+    "gpt-3.5-turbo": GPT,
+    "sqlcoder-7b-2": sqlcoder,
+    "deepseek-coder-33b-instruct": DeepSeek
+}
+
+try:
+    llm = model_dict[model_name]()
+except Exception as e:
+    print("Error in starting llm: ", e)
+    sys.exit("Error in starting llm: ", e)
 
 
 @ app.route("/")

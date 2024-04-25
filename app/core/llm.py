@@ -18,7 +18,7 @@ def get_tokenizer_model(model_name):
 
 
 class sqlcoder:
-    def __init__(self, model_name="../sqlcoder-7b-2"):
+    def __init__(self, model_name="./model-sqlcoder-7b-2"):
         self.tokenizer, self.model = get_tokenizer_model(model_name)
 
     def generate(self, prompt):
@@ -115,7 +115,7 @@ class GPT:
 
 
 class DeepSeek:
-    def __init__(self, model_name="../deepseek-coder-33b-instruct"):
+    def __init__(self, model_name="./deepseek-coder-33b-instruct"):
         self.tokenizer = modelscope.AutoTokenizer.from_pretrained(
             model_name, trust_remote_code=True)
         self.model = modelscope.AutoModelForCausalLM.from_pretrained(

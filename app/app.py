@@ -5,13 +5,13 @@ from langchain.sql_database import SQLDatabase
 import argparse
 import os
 from core.service import run_generation
-from core.llm import sqlcoder, GPT, DeepSeek, modelhub_deepseek_coder_33b_instruct
+from core.llm import sqlcoder, GPT, DeepSeek, modelhub_deepseek_coder_33b_instruct, modelhub_qwen1_5_72b_chat
 app = Flask(__name__)
 
 print("=============Starting service==============")
 parser = argparse.ArgumentParser()
 parser.add_argument("--model_name", type=str, choices=[
-                    "gpt-3.5-turbo", "sqlcoder-7b-2", "deepseek-coder-33b-instruct", "modelhub-deepseek-coder-33b-instruct"], default="sqlcoder-7b-2")
+                    "gpt-3.5-turbo", "sqlcoder-7b-2", "deepseek-coder-33b-instruct", "modelhub-deepseek-coder-33b-instruct", "modelhub_qwen1_5_72b_chat"], default="sqlcoder-7b-2")
 args = parser.parse_args()
 model_name = args.model_name
 print(f"model_name: {model_name}")
@@ -67,7 +67,8 @@ model_dict = {
     "gpt-3.5-turbo": GPT,
     "sqlcoder-7b-2": sqlcoder,
     "deepseek-coder-33b-instruct": DeepSeek,
-    "modelhub-deepseek-coder-33b-instruct": modelhub_deepseek_coder_33b_instruct
+    "modelhub-deepseek-coder-33b-instruct": modelhub_deepseek_coder_33b_instruct,
+    "modelhub_qwen1_5_72b_chat": modelhub_qwen1_5_72b_chat
 }
 
 try:

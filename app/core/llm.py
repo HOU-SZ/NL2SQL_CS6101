@@ -181,3 +181,32 @@ class modelhub_deepseek_coder_33b_instruct:
             stop=None
         )
         return response.choices[0].message.content
+
+
+class modelhub_qwen1_5_72b_chat:
+    def __init__(self, model_name="qwen1.5-72b-chat"):
+        self.model_name = model_name
+        self.client = openai.OpenAI(api_key="9ea3d7417a2e4115a18c7048cb0c216f",
+                                    base_url="http://modelhub.4pd.io/learnware/models/openai/4pd/api/v1")
+
+    def generate(self, prompt):
+        response = self.client.chat.completions.create(
+            model="public/qwen1-5-72b-chat@main",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.0,
+            max_tokens=600,
+            top_p=1.0,
+            stop=None
+        )
+        return response.choices[0].message.content
+
+    def debug(self, prompt):
+        response = self.client.chat.completions.create(
+            model="public/qwen1-5-72b-chat@main",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.0,
+            max_tokens=350,
+            top_p=1.0,
+            stop=None
+        )
+        return response.choices[0].message.content

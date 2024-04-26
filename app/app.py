@@ -5,13 +5,13 @@ from langchain.sql_database import SQLDatabase
 import argparse
 import os
 from core.service import run_generation
-from core.llm import sqlcoder, GPT, DeepSeek
+from core.llm import sqlcoder, GPT, DeepSeek, modelhub_deepseek_coder_33b_instruct
 app = Flask(__name__)
 
 print("=============Starting service==============")
 parser = argparse.ArgumentParser()
 parser.add_argument("--model_name", type=str, choices=[
-                    "gpt-3.5-turbo", "sqlcoder-7b-2", "deepseek-coder-33b-instruct"], default="sqlcoder-7b-2")
+                    "gpt-3.5-turbo", "sqlcoder-7b-2", "deepseek-coder-33b-instruct", "modelhub-deepseek-coder-33b-instruct"], default="sqlcoder-7b-2")
 args = parser.parse_args()
 model_name = args.model_name
 print(f"model_name: {model_name}")
@@ -60,13 +60,14 @@ for table in tables:
     cur_table_info = db_tool.get_table_info([table])
     table_info[table] = cur_table_info
     print(f"table_info: {cur_table_info}")  # 输出建表语句以及3条数据示例
-print("lengeth of table_info: ", len(table_info))
+print("length of table_info: ", len(table_info))
 
 
 model_dict = {
     "gpt-3.5-turbo": GPT,
     "sqlcoder-7b-2": sqlcoder,
-    "deepseek-coder-33b-instruct": DeepSeek
+    "deepseek-coder-33b-instruct": DeepSeek,
+    "modelhub-deepseek-coder-33b-instruct": modelhub_deepseek_coder_33b_instruct
 }
 
 try:
@@ -114,4 +115,4 @@ def predict():
 
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", debug=True, port=18080)
+    app.run(host="0.0.0.0", port=18080)

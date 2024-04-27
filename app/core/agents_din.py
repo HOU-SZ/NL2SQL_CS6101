@@ -235,6 +235,7 @@ class Generator:
         if message['send_to'] != self.name:
             return
         self._message = message
+        generated_SQL = None
         if message['classification'] == '"EASY"':
             prompt = self.easy_prompt(message)
             print("prompt: \n", prompt)
@@ -389,6 +390,7 @@ class Refiner(BaseAgent):
                 print("===============Error in the refiner module:", error)
                 pass
         print("Generated response:", debugged_SQL)
+        SQL = None
         if debugged_SQL[:6] == "SELECT":
             SQL = debugged_SQL
         elif debugged_SQL[:6] == "```sql" and debugged_SQL[-3:] == "```":
@@ -399,6 +401,7 @@ class Refiner(BaseAgent):
             SQL = debugged_SQL[4:-3]
         else:
             print("Unrecognized format for the debugged SQL")
+            SQL = debugged_SQL
         SQL = SQL.replace("\n", " ")
         SQL = SQL.replace("\t", " ")
         while "  " in SQL:

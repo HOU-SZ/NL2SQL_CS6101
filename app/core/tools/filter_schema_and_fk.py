@@ -1,16 +1,20 @@
 import re
 
+
 def apply_dictionary(sql_commands, foreign_keys, dictionary):
     modified_sql_commands = {}
     droped_tables = []
     droped_table_columns = {}
+    # print("sql_commands:", sql_commands)
 
     for sql_command in sql_commands:
         table_name_match = ""
         if 'CREATE TABLE "' in sql_command:
-            table_name_match = re.search(r'CREATE TABLE "(.*?)"', sql_command)
+            table_name_match = re.search(
+                r'CREATE TABLE "(.*?)"', sql_command)
         else:
-            table_name_match = re.search(r'CREATE TABLE (.*?)\s*\(', sql_command)
+            table_name_match = re.search(
+                r'CREATE TABLE (.*?)\s*\(', sql_command)
         if table_name_match:
             table_name = table_name_match.group(1)
             if table_name in dictionary:
@@ -33,9 +37,11 @@ def apply_dictionary(sql_commands, foreign_keys, dictionary):
                         elif column_name_match and column_name_match.group(1) not in columns_to_keep:
                             if table_name not in droped_table_columns:
                                 droped_table_columns[table_name] = []
-                            droped_table_columns[table_name].append(column_name_match.group(1))
+                            droped_table_columns[table_name].append(
+                                column_name_match.group(1))
                     new_lines.append(");")
-                    modified_sql_commands[table_name] = "\n".join(new_lines)
+                    modified_sql_commands[table_name] = "\n".join(
+                        new_lines)
             else:
                 modified_sql_commands[table_name] = sql_command
 
@@ -51,11 +57,13 @@ def apply_dictionary(sql_commands, foreign_keys, dictionary):
                 if table_name == table:
                     del modified_sql_commands[table_name]
                 elif "REFERENCES " + table in sql_command:
-                    modified_sql_commands[table_name] = re.sub(r'FOREIGN KEY\("(.*?)"\) REFERENCES ' + table + ' \("(.*?)"\)', '', sql_command)
-                    modified_sql_commands[table_name] = re.sub(r'\n\s*\n', '\n', modified_sql_commands[table_name])
-                    modified_sql_commands[table_name] = re.sub(r',\s*,', ',', modified_sql_commands[table_name])
-        
-    
+                    modified_sql_commands[table_name] = re.sub(
+                        r'FOREIGN KEY\("(.*?)"\) REFERENCES ' + table + ' \("(.*?)"\)', '', sql_command)
+                    modified_sql_commands[table_name] = re.sub(
+                        r'\n\s*\n', '\n', modified_sql_commands[table_name])
+                    modified_sql_commands[table_name] = re.sub(
+                        r',\s*,', ',', modified_sql_commands[table_name])
+
     # Remove foreign keys constraints referencing columns that are not kept (left of the "=" sign)
     for table_name, fks in foreign_keys.items():
         for fk in fks:
@@ -71,22 +79,26 @@ def apply_dictionary(sql_commands, foreign_keys, dictionary):
             right_column = fk.split("=")[1].split(".")[1]
             if right_table in dictionary and type(dictionary[right_table]) == list and right_column not in dictionary[right_table]:
                 fks.remove(fk)
-    
+
     # Remove all unnecessary REFERENCES in the modified_sql_commands
     for table_name, droped_columns in droped_table_columns.items():
         for column in droped_columns:
             for table_name, sql_command in modified_sql_commands.items():
-                match_str_1 = "REFERENCES " + table_name + '("' + column + '")'
-                match_str_2 = "REFERENCES " + table_name + ' ("' + column + '")'
+                match_str_1 = "REFERENCES " + \
+                    table_name + '("' + column + '")'
+                match_str_2 = "REFERENCES " + \
+                    table_name + ' ("' + column + '")'
                 if match_str_1 in sql_command:
                     sql_command = sql_command.replace(match_str_1, '')
                 elif match_str_2 in sql_command:
                     sql_command = sql_command.replace(match_str_2, '')
                 modified_sql_commands[table_name] = sql_command
-                modified_sql_commands[table_name] = re.sub(r'\n\s*\n', '\n', modified_sql_commands[table_name])
-                modified_sql_commands[table_name] = re.sub(r',\s*,', ',', modified_sql_commands[table_name])
-
+                modified_sql_commands[table_name] = re.sub(
+                    r'\n\s*\n', '\n', modified_sql_commands[table_name])
+                modified_sql_commands[table_name] = re.sub(
+                    r',\s*,', ',', modified_sql_commands[table_name])
     return modified_sql_commands.values(), foreign_keys
+
 
 if __name__ == "__main__":
     sql_commands = [
@@ -141,9 +153,10 @@ if __name__ == "__main__":
         "singer": "keep_all",
         "singer_in_concert": "drop_all",
         "stadium": "drop_all"
-        }
+    }
 
-    modified_sql_commands, foreign_keys = apply_dictionary(sql_commands, foreign_keys, dictionary)
+    modified_sql_commands, foreign_keys = apply_dictionary(
+        sql_commands, foreign_keys, dictionary)
 
     print("SQL create table命令：")
     for sql_command in modified_sql_commands:

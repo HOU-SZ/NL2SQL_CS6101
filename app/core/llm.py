@@ -102,7 +102,7 @@ class GPT:
             presence_penalty=0.0,
             stop=["Q:"]
         )
-        return response['choices'][0]['message']['content']
+        return response.choices[0].message.content
 
     def debug(self, prompt):
         response = self.client.chat.completions.create(
@@ -117,7 +117,7 @@ class GPT:
             presence_penalty=0.0,
             stop=["#", ";", "\n\n"]
         )
-        return response['choices'][0]['message']['content']
+        return response.choices[0].message.content
 
 
 class DeepSeek:

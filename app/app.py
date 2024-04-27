@@ -4,7 +4,7 @@ from flask import Flask, request
 from langchain.sql_database import SQLDatabase
 import argparse
 import os
-from core.service import run_generation
+from core.service import run_generation_mac, run_genration_din
 from core.llm import sqlcoder, GPT, DeepSeek, modelhub_deepseek_coder_33b_instruct, modelhub_qwen1_5_72b_chat
 app = Flask(__name__)
 
@@ -12,8 +12,11 @@ print("=============Starting service==============")
 parser = argparse.ArgumentParser()
 parser.add_argument("--model_name", type=str, choices=[
                     "gpt-3.5-turbo", "sqlcoder-7b-2", "deepseek-coder-33b-instruct", "modelhub-deepseek-coder-33b-instruct", "modelhub_qwen1_5_72b_chat"], default="sqlcoder-7b-2")
+parser.add_argument("--method", type=str,
+                    choices=["mac", "din"], default="mac")
 args = parser.parse_args()
 model_name = args.model_name
+method = args.method
 print(f"model_name: {model_name}")
 
 
@@ -99,8 +102,13 @@ def predict():
 
     # sql_query = "SELECT ......"
     try:
-        sql_query = run_generation(
-            question, db_name, db_description, tables, table_info, llm)
+        if method == "din":
+            sql_query = run_genration_din(
+                question, db_name, db_description, tables, table_info, llm, db_tool)
+        else:
+            sql_query = run_generation_mac(
+                question, db_name, db_description, tables, table_info, llm)
+
     except Exception as e:
         print("Error: ", e)
         return {

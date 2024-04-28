@@ -2,7 +2,7 @@ import re
 import time
 from core.agents import BaseAgent
 from core.tools.filter_schema_and_fk import apply_dictionary
-from core.utils import get_create_table_sqls, extract_foreign_keys
+from core.utils import get_create_table_sqls, extract_foreign_keys, parse_sql_from_string
 from core.const_din import SCHEMA_LINKER, CLASSIFIER, GENERATOR, REFINER, SYSTEM_NAME, schema_linking_prompt, classification_prompt, easy_prompt, medium_prompt, hard_prompt, refiner_prompt
 import openai
 
@@ -76,11 +76,11 @@ class Schema_Linker(BaseAgent):
                 drop_all_count += 1
             elif len(schema_links_dict[table.name]) == len(table._columns.items()):
                 schema_links_dict[table.name] = "keep_all"
-        print("schema_links_dict: ", schema_links_dict)
         if drop_all_count == total_tables:
             # keep all tables
             for table in db_tool._metadata.sorted_tables:
                 schema_links_dict[table.name] = "keep_all"
+        print("schema_links_dict: ", schema_links_dict)
         return schema_links_dict
 
     def talk(self, message):
@@ -96,6 +96,13 @@ class Schema_Linker(BaseAgent):
             foreign_keys_str = None
 
         instruction = "### Task: Find the schema_links for generating SQL queries for each question based on the database schema and Foreign keys.\n"
+        instruction += "## Instruction: \n"
+        instruction += "1. select tables and columns only relevant to the question from the given database schema, and format them as 'table_name.column_name'\n"
+        instruction += "2. if you need to join two tables, format them as 'table_name_1.column_name_1 = table_name_2.column_name_2'\n"
+        instruction += "3. if you need to join multiple tables, format them as 'table_name_1.column_name_1 = table_name_2.column_name_2 = table_name_3.column_name_3'\n"
+        # instruction += "4. if you need to select all columns from a table, format them as 'table_name.*'\n"
+        instruction += "5. please also select the tables and columns that are not directly used in the query but are necessary for the query\n"
+        instructions += "6. please also include possible entity names and condition values in the schema_links\n\n"
         instruction += "/* Some example questions and corresponding schema_links are provided: */\n"
         instruction += schema_linking_prompt
         question_instruction = "/* Given the following database schema and Foreign keys: */\n"
@@ -117,6 +124,18 @@ class Schema_Linker(BaseAgent):
         if schema_links == "[]":
             try:
                 schema_links = reply.split("schema_links: ")[1]
+            except Exception as e:
+                print("=============Slicing error in schema linker: ", e)
+                schema_links = "[]"
+        if schema_links == "[]":
+            try:
+                schema_links = reply.split("The Schema_links are: ")[1]
+            except Exception as e:
+                print("=============Slicing error in schema linker: ", e)
+                schema_links = "[]"
+        if schema_links == "[]":
+            try:
+                schema_links = reply.split("The schema_links are: ")[1]
             except Exception as e:
                 print("=============Slicing error in schema linker: ", e)
                 schema_links = "[]"
@@ -228,14 +247,15 @@ class Generator:
         instruction = "### Task: Use the intermediate representation and the schema links to generate the SQL queries for the question. The answer may involves nested or set operations such as EXCEPT, UNION, IN, and INTERSECT, or JOIN multiple tables. So to solve the question, you need to decompose the question into sub-questions first, and generate sub-queries for the sub-questions one by one. Then you need to generate a pseudo-SQL as an intermediate representation for the question. Finally, based on the sub-queries and the intermediate representation, generate the final SQL.\n\n"
         instruction += "/* Some example questions and corresponding SQL queries are provided: */\n"
         instruction += hard_prompt
-        stepping = f'''\nA: Let's think step by step. "{message['question']}" can be solved by knowing the answer to the following sub-question "{message['sub_questions']}".'''
+        # stepping = f'''\nA: Let's think step by step. "{message['question']}" can be solved by knowing the answer to the following sub-question "{message['sub_questions']}".'''
+        stepping = f'''\nA: Let's think step by step.'''
         question_instruction = "/* Given the following database schema: */\n"
         question_instruction += message['modified_sql_commands']
         question_instruction += "\n/* Please provide the correct SQL query for the following question: */\n"
         question_instruction += f"Q: {message['question']}\n"
         question_instruction += f"Schema_links: {message['schema_link']}\n"
         question_instruction += stepping
-        question_instruction += '\nThe SQL query for the sub-question"'
+        # question_instruction += '\nThe SQL query for the sub-question"'
         return instruction + question_instruction
 
     def talk(self, message):
@@ -355,6 +375,8 @@ class Generator:
             if SQL == "SELECT":
                 SQL = generated_SQL
             generated_SQL = SQL
+        if generated_SQL is None:
+            generated_SQL = parse_sql_from_string(generated_SQL)
         print("Generated SQL:", generated_SQL)
         self._message['generated_SQL'] = generated_SQL
         self._message['send_to'] = REFINER
@@ -408,7 +430,7 @@ class Refiner(BaseAgent):
             SQL = debugged_SQL[4:-3]
         else:
             print("Unrecognized format for the debugged SQL")
-            SQL = debugged_SQL
+            SQL = parse_sql_from_string(debugged_SQL)
         SQL = SQL.replace("\n", " ")
         SQL = SQL.replace("\t", " ")
         while "  " in SQL:

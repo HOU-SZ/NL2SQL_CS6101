@@ -456,5 +456,9 @@ refiner_prompt = """
 {query}
 【SQLite SQL Query】
 {sql}
+
+## Attention:
+1) If the given SQL query is None, generate correct SQL query and return (without any explanation).
+2) Return the fixed SQL query only (without any explanation).
 【Fixed SQL Query】
 """

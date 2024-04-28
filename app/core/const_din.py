@@ -445,6 +445,8 @@ refiner_prompt = """
 5) Pay attention to the columns that are used for the SELECT statement.
 6) Only change the GROUP BY clause when necessary (Avoid redundant columns in GROUP BY).
 7) Use GROUP BY on one column only.
+8) If the given SQL query is None, return correct SQL query.
+9) Return the fixed SQL query only (without any additional information).
 
 【Database schema】
 {desc_str}

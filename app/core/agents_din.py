@@ -68,12 +68,19 @@ class Schema_Linker(BaseAgent):
                 else:
                     schema_links_dict[table_2] = [column_2]
         print("schema_links_dict: ", schema_links_dict)
+        drop_all_count = 0
+        total_tables = len(db_tool._metadata.sorted_tables)
         for table in db_tool._metadata.sorted_tables:
             if table.name not in schema_links_dict:
                 schema_links_dict[table.name] = "drop_all"
+                drop_all_count += 1
             elif len(schema_links_dict[table.name]) == len(table._columns.items()):
                 schema_links_dict[table.name] = "keep_all"
         print("schema_links_dict: ", schema_links_dict)
+        if drop_all_count == total_tables:
+            # keep all tables
+            for table in db_tool._metadata.sorted_tables:
+                schema_links_dict[table.name] = "keep_all"
         return schema_links_dict
 
     def talk(self, message):
@@ -95,7 +102,7 @@ class Schema_Linker(BaseAgent):
         question_instruction += self.get_table_columns(
             self.db_tool, self.tables, self.table_info)
         question_instruction += self.get_foreign_keys(foreign_keys)
-        question_instruction += "\n/* Please provide the correct schema_link for generating SQL query for the following question. Please DO NOT include any SQL keyword in the generated schema_link! */\n"
+        question_instruction += "\n/* Please provide the correct schema_link for generating SQL query for the following question. Please DO NOT include any SQL keyword in the generated schema_link! Please DO NOT generate any explanation after generating the schema_link! */\n"
         question_instruction += f"Q: {message['question']}" + \
             """"\nA: Let\'s think step by step."""
         prompt = instruction + question_instruction
@@ -236,7 +243,7 @@ class Generator:
             return
         self._message = message
         generated_SQL = None
-        if message['classification'] == '"EASY"':
+        if '"EASY"' in message['classification']:
             prompt = self.easy_prompt(message)
             print("prompt: \n", prompt)
             generated_SQL = None
@@ -250,7 +257,7 @@ class Generator:
                 except Exception as error:
                     print("===============Error in the easy module:", error)
                     pass
-        elif message['classification'] == '"NON-NESTED"':
+        elif '"NON-NESTED"' in message['classification']:
             prompt = self.medium_prompt(message)
             print("prompt: \n", prompt)
             generated_SQL = None
@@ -301,7 +308,7 @@ class Generator:
             if SQL == "SELECT":
                 SQL = generated_SQL
             generated_SQL = SQL
-        elif message['classification'] == "NESTED":
+        else:
             prompt = self.hard_prompt(message)
             print("prompt: \n", prompt)
             generated_SQL = None

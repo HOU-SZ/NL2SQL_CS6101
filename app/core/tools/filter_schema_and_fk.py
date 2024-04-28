@@ -8,6 +8,8 @@ def apply_dictionary(sql_commands, foreign_keys, dictionary):
     # print("sql_commands:", sql_commands)
 
     for sql_command in sql_commands:
+        if "`" in sql_command:
+            sql_command = sql_command.replace("`", "")
         table_name_match = ""
         if 'CREATE TABLE "' in sql_command:
             table_name_match = re.search(

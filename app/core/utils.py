@@ -96,4 +96,14 @@ def parse_sql_from_string(input_string):
     if all_sqls:
         return all_sqls[-1]
     else:
-        return "error: No SQL found in the input string"
+        sql_pattern = r'```(.*?)```'
+        for match in re.finditer(sql_pattern, input_string, re.DOTALL):
+            all_sqls.append(match.group(1).strip())
+        if all_sqls:
+            return all_sqls[-1]
+        else:
+            input_string_list = input_string.split(":")
+            if len(input_string_list) > 1:
+                return input_string_list[-1].strip()
+            else:
+                return "error: No SQL found in the input string"

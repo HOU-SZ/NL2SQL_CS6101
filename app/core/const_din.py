@@ -458,7 +458,9 @@ refiner_prompt = """
 {sql}
 
 ## Attention:
-1) If the given SQL query is None, generate correct SQL query and return (without any explanation).
-2) Return the fixed SQL query only (without any explanation).
+1) If the given SQL query is None, generate the correct SQL query and return it (without any explanation).
+2) If the given SQL query is correct, return it as is (without any explanation).
+3) Return the fixed SQL query only (without any explanation).
+4) Please follow the format to return the fixed SQL query.
 【Fixed SQL Query】
 """

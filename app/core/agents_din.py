@@ -102,7 +102,8 @@ class Schema_Linker(BaseAgent):
         instruction += "3. if you need to join multiple tables, format them as 'table_name_1.column_name_1 = table_name_2.column_name_2 = table_name_3.column_name_3'\n"
         # instruction += "4. if you need to select all columns from a table, format them as 'table_name.*'\n"
         instruction += "5. please also select the tables and columns that are not directly used in the query but are necessary for the query\n"
-        instruction += "6. please also include possible entity names and condition values in the schema_links\n\n"
+        instruction += "6. please also include possible entity names and additional condition values in the schema_links\n\n"
+        instruction += "7. please output the schema_links in the format of 'Schema_links: [table_name_1.column_name_1, table_name_2.column_name_2, ...]'\n\n"
         instruction += "/* Some example questions and corresponding schema_links are provided: */\n"
         instruction += schema_linking_prompt
         question_instruction = "/* Given the following database schema and Foreign keys: */\n"
@@ -136,6 +137,14 @@ class Schema_Linker(BaseAgent):
         if schema_links == "[]":
             try:
                 schema_links = reply.split("The schema_links are: ")[1]
+            except Exception as e:
+                print("=============Slicing error in schema linker: ", e)
+                schema_links = "[]"
+        if schema_links == "[]":
+            try:
+                schema_links = reply.split(":")
+                if len(schema_links) > 1:
+                    schema_links = schema_links[-1].strip()
             except Exception as e:
                 print("=============Slicing error in schema linker: ", e)
                 schema_links = "[]"
@@ -431,6 +440,8 @@ class Refiner(BaseAgent):
         else:
             print("Unrecognized format for the debugged SQL")
             SQL = parse_sql_from_string(debugged_SQL)
+            if SQL[:5] == "error":
+                SQL = message['generated_SQL']  # fallback to the generated SQL
         SQL = SQL.replace("\n", " ")
         SQL = SQL.replace("\t", " ")
         while "  " in SQL:

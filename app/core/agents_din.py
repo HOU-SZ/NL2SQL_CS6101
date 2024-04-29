@@ -89,11 +89,9 @@ class Schema_Linker(BaseAgent):
         self._message = message
         create_table_sqls = get_create_table_sqls(self.tables, self.table_info)
         foreign_keys = extract_foreign_keys(create_table_sqls)
-        foreign_keys_str = str()
+        foreign_keys_str = ""
         for table, fks in foreign_keys.items():
             foreign_keys_str += f"{table}: {fks}\n"
-        if foreign_keys_str == "":
-            foreign_keys_str = None
 
         instruction = "### Task: Find the schema_links for generating SQL queries for each question based on the database schema and Foreign keys.\n"
         instruction += "## Instruction: \n"
@@ -110,17 +108,9 @@ class Schema_Linker(BaseAgent):
         table_columns_din = self.get_table_columns(
             self.db_tool, self.tables, self.table_info)
         foreign_keys_din = self.get_foreign_keys(foreign_keys)
-        table_columns_code = get_create_table_sqls(
-            self.tables, self.table_info)
-        foreign_keys_code = extract_foreign_keys(table_columns_code)
-        foreign_keys_str = str()
-        for table, fks in foreign_keys_code.items():
-            foreign_keys_str += f"{table}: {fks}\n"
-        if foreign_keys_str == "":
-            foreign_keys_str = None
         # question_instruction += table_columns_din
         # question_instruction += foreign_keys_din
-        question_instruction += "".join(table_columns_code)
+        question_instruction += "".join(create_table_sqls)
         question_instruction += foreign_keys_str
         question_instruction += "\n/* Please provide the correct schema_link for generating SQL query for the following question. Please DO NOT include any SQL keyword in the generated schema_link! Please DO NOT generate any explanation after generating the schema_link! */\n"
         question_instruction += f"Q: {message['question']}" + \

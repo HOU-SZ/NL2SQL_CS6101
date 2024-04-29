@@ -102,7 +102,7 @@ class Schema_Linker(BaseAgent):
         instruction += "3. if you need to join multiple tables, format them as 'table_name_1.column_name_1 = table_name_2.column_name_2 = table_name_3.column_name_3'\n"
         # instruction += "4. if you need to select all columns from a table, format them as 'table_name.*'\n"
         instruction += "5. please also select the tables and columns that are not directly used in the query but are necessary for the query\n"
-        instructions += "6. please also include possible entity names and condition values in the schema_links\n\n"
+        instruction += "6. please also include possible entity names and condition values in the schema_links\n\n"
         instruction += "/* Some example questions and corresponding schema_links are provided: */\n"
         instruction += schema_linking_prompt
         question_instruction = "/* Given the following database schema and Foreign keys: */\n"

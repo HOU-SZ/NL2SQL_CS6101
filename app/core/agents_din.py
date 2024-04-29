@@ -107,9 +107,16 @@ class Schema_Linker(BaseAgent):
         instruction += "/* Some example questions and corresponding schema_links are provided: */\n"
         instruction += schema_linking_prompt
         question_instruction = "/* Given the following database schema and Foreign keys: */\n"
-        question_instruction += self.get_table_columns(
+        table_columns_din = self.get_table_columns(
             self.db_tool, self.tables, self.table_info)
-        question_instruction += self.get_foreign_keys(foreign_keys)
+        foreign_keys_din = self.get_foreign_keys(foreign_keys)
+        table_columns_code = get_create_table_sqls(
+            self.tables, self.table_info)
+        foreign_keys_code = extract_foreign_keys(table_columns_code)
+        # question_instruction += table_columns_din
+        # question_instruction += foreign_keys_din
+        question_instruction += table_columns_code
+        question_instruction += foreign_keys_code
         question_instruction += "\n/* Please provide the correct schema_link for generating SQL query for the following question. Please DO NOT include any SQL keyword in the generated schema_link! Please DO NOT generate any explanation after generating the schema_link! */\n"
         question_instruction += f"Q: {message['question']}" + \
             """"\nA: Let\'s think step by step."""

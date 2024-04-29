@@ -1,5 +1,5 @@
 from core.agents import Selector, Decomposer, Refiner
-from core.agents_din import Schema_Linker, Classifier, Generator, Refiner
+from core.agents_din import Schema_Linker, Classifier, Generator, Self_Corrector
 from core.const import SELECTOR_NAME, DECOMPOSER_NAME, REFINER_NAME, SYSTEM_NAME, MAX_ROUND
 from core.const_din import SCHEMA_LINKER, CLASSIFIER, GENERATOR, REFINER, SYSTEM_NAME
 from core.llm import sqlcoder, GPT, DeepSeek
@@ -61,7 +61,8 @@ class ChatManager_DIN(object):
             Classifier(db_name, db_description, tables,
                        table_info, self.llm),
             Generator(db_name, db_description, tables, table_info, self.llm),
-            Refiner(db_name, db_description, tables, table_info, self.llm)
+            Self_Corrector(db_name, db_description,
+                           tables, table_info, self.llm)
         ]
 
     def _chat_single_round(self, message: dict):

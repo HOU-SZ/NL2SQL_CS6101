@@ -1,7 +1,8 @@
 SCHEMA_LINKER = "Schema_Linker"
 CLASSIFIER = "Classifier"
 GENERATOR = "Generator"
-REFINER = "Refiner"
+# REFINER = "Refiner"
+SELF_CORRECTOR = "Self_Corrector"
 SYSTEM_NAME = 'System'
 
 schema_linking_prompt = '''Table advisor, columns = [*,s_ID,i_ID]

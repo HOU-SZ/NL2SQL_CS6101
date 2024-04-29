@@ -3,7 +3,7 @@ import time
 from core.agents import BaseAgent
 from core.tools.filter_schema_and_fk import apply_dictionary
 from core.utils import get_create_table_sqls, extract_foreign_keys, parse_sql_from_string
-from core.const_din import SCHEMA_LINKER, CLASSIFIER, GENERATOR, REFINER, SYSTEM_NAME, schema_linking_prompt, classification_prompt, easy_prompt, medium_prompt, hard_prompt, refiner_prompt
+from core.const_din import SCHEMA_LINKER, CLASSIFIER, GENERATOR, SELF_CORRECTOR, SYSTEM_NAME, schema_linking_prompt, classification_prompt, easy_prompt, medium_prompt, hard_prompt, refiner_prompt
 import openai
 
 
@@ -390,11 +390,11 @@ class Generator:
             generated_SQL = parse_sql_from_string(generated_SQL)
         print("Generated SQL:", generated_SQL)
         self._message['generated_SQL'] = generated_SQL
-        self._message['send_to'] = REFINER
+        self._message['send_to'] = SELF_CORRECTOR
 
 
-class Refiner(BaseAgent):
-    name = REFINER
+class Self_Corrector(BaseAgent):
+    name = SELF_CORRECTOR
 
     def __init__(self, db_name, db_description, tables, table_info, llm):
         super().__init__()

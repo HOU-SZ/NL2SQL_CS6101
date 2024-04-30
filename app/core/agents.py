@@ -2,10 +2,12 @@ import abc
 import re
 import sqlite3
 import time
+
+import openai
 from core.const import SELECTOR_NAME, DECOMPOSER_NAME, REFINER_NAME, SYSTEM_NAME, selector_template, decompose_template_spider, decompose_template_bird, refiner_template, refiner_template_din
 from core.llm import sqlcoder
 from core.utils import parse_json, parse_sql_from_string, get_create_table_sqls, get_table_data, extract_foreign_keys
-# from core.tools.filter_schema_and_fk import apply_dictionary
+from core.tools.filter_schema_and_fk import apply_dictionary
 
 
 class BaseAgent(metaclass=abc.ABCMeta):
@@ -33,105 +35,6 @@ class Selector(BaseAgent):
         self.llm = llm
         self._message = {}
 
-    def apply_dictionary(self, sql_commands, foreign_keys, dictionary):
-        modified_sql_commands = {}
-        droped_tables = []
-        droped_table_columns = {}
-
-        for sql_command in sql_commands:
-            if "`" in sql_command:
-                sql_command = sql_command.replace("`", "")
-            table_name_match = ""
-            if 'CREATE TABLE "' in sql_command:
-                table_name_match = re.search(
-                    r'CREATE TABLE "(.*?)"', sql_command)
-            else:
-                table_name_match = re.search(
-                    r'CREATE TABLE (.*?)\s*\(', sql_command)
-            if table_name_match:
-                table_name = table_name_match.group(1)
-                if table_name in dictionary:
-                    if dictionary[table_name] == "keep_all":
-                        modified_sql_commands[table_name] = sql_command
-                    elif dictionary[table_name] == "drop_all":
-                        # Drop the table and its foreign keys
-                        if table_name in foreign_keys:
-                            del foreign_keys[table_name]
-                        droped_tables.append(table_name)
-                    elif isinstance(dictionary[table_name], list):
-                        # Keep only specified columns
-                        columns_to_keep = set(dictionary[table_name])
-                        lines = sql_command.split("\n")
-                        new_lines = [lines[0]]  # Keep the CREATE TABLE line
-                        for line in lines[1:]:
-                            column_name_match = re.search(r'"(\w+)"', line)
-                            if column_name_match and column_name_match.group(1) in columns_to_keep:
-                                new_lines.append(line)
-                            elif column_name_match and column_name_match.group(1) not in columns_to_keep:
-                                if table_name not in droped_table_columns:
-                                    droped_table_columns[table_name] = []
-                                droped_table_columns[table_name].append(
-                                    column_name_match.group(1))
-                        new_lines.append(");")
-                        modified_sql_commands[table_name] = "\n".join(
-                            new_lines)
-                else:
-                    modified_sql_commands[table_name] = sql_command
-
-        # Remove foreign keys constraints referencing dropped tables (right of the "=" sign)
-        for table in droped_tables:
-            for table_name, fks in foreign_keys.items():
-                for fk in fks:
-                    right_table = fk.split("=")[1].split(".")[0]
-                    if right_table == table:
-                        fks.remove(fk)
-                # remove the command line form the corresponding create table command
-                for table_name, sql_command in modified_sql_commands.items():
-                    if table_name == table:
-                        del modified_sql_commands[table_name]
-                    elif "REFERENCES " + table in sql_command:
-                        modified_sql_commands[table_name] = re.sub(
-                            r'FOREIGN KEY\("(.*?)"\) REFERENCES ' + table + ' \("(.*?)"\)', '', sql_command)
-                        modified_sql_commands[table_name] = re.sub(
-                            r'\n\s*\n', '\n', modified_sql_commands[table_name])
-                        modified_sql_commands[table_name] = re.sub(
-                            r',\s*,', ',', modified_sql_commands[table_name])
-
-        # Remove foreign keys constraints referencing columns that are not kept (left of the "=" sign)
-        for table_name, fks in foreign_keys.items():
-            for fk in fks:
-                left_table = fk.split("=")[0].split(".")[0]
-                left_column = fk.split("=")[0].split(".")[1]
-                if left_table in dictionary and type(dictionary[left_table]) == list and left_column not in dictionary[left_table]:
-                    fks.remove(fk)
-
-        # Remove foreign keys constraints referencing columns that are not kept (right of the "=" sign)
-        for table_name, fks in foreign_keys.items():
-            for fk in fks:
-                right_table = fk.split("=")[1].split(".")[0]
-                right_column = fk.split("=")[1].split(".")[1]
-                if right_table in dictionary and type(dictionary[right_table]) == list and right_column not in dictionary[right_table]:
-                    fks.remove(fk)
-
-        # Remove all unnecessary REFERENCES in the modified_sql_commands
-        for table_name, droped_columns in droped_table_columns.items():
-            for column in droped_columns:
-                for table_name, sql_command in modified_sql_commands.items():
-                    match_str_1 = "REFERENCES " + \
-                        table_name + '("' + column + '")'
-                    match_str_2 = "REFERENCES " + \
-                        table_name + ' ("' + column + '")'
-                    if match_str_1 in sql_command:
-                        sql_command = sql_command.replace(match_str_1, '')
-                    elif match_str_2 in sql_command:
-                        sql_command = sql_command.replace(match_str_2, '')
-                    modified_sql_commands[table_name] = sql_command
-                    modified_sql_commands[table_name] = re.sub(
-                        r'\n\s*\n', '\n', modified_sql_commands[table_name])
-                    modified_sql_commands[table_name] = re.sub(
-                        r',\s*,', ',', modified_sql_commands[table_name])
-        return modified_sql_commands.values(), foreign_keys
-
     def talk(self, message: dict):
         if message['send_to'] != self.name:
             return
@@ -150,11 +53,9 @@ class Selector(BaseAgent):
         print("reply: \n", reply)
         extracted_schema_dict = parse_json(reply)
         print("extracted_schema_dict: \n", extracted_schema_dict)
-        modified_sql_commands, modified_foreign_keys = self.apply_dictionary(
+        modified_sql_commands, modified_foreign_keys = apply_dictionary(
             create_table_sqls, foreign_keys, extracted_schema_dict)
-        # modified_sql_commands, modified_foreign_keys = apply_dictionary(create_table_sqls, foreign_keys, extracted_schema_dict)
-        # print("create_table_sqls: \n", create_table_sqls)
-        # print("foreign_keys: \n", foreign_keys)
+
         print("modified_sql_commands: \n")
         for sql_command in modified_sql_commands:
             print(sql_command)
@@ -252,7 +153,36 @@ class Refiner(BaseAgent):
             print("Not implemented yet")
             return None
         print("prompt: \n", prompt)
-        reply = self.llm.debug(prompt)
-        print("reply: \n", reply)
-        message['final_sql'] = reply
+        debugged_SQL = None
+        while debugged_SQL is None:
+            try:
+                debugged_SQL = self.llm.debug(prompt)
+            except openai.error.RateLimitError as error:
+                print(
+                    "===============Rate limit error for the classification module:", error)
+                time.sleep(15)
+            except Exception as error:
+                print("===============Error in the refiner module:", error)
+                pass
+        print("Generated response:", debugged_SQL)
+        SQL = None
+        if debugged_SQL[:6] == "SELECT" or debugged_SQL[:7] == " SELECT":
+            SQL = debugged_SQL
+        elif debugged_SQL[:6] == "```sql" and debugged_SQL[-3:] == "```":
+            SQL = debugged_SQL[7:-3]
+        elif debugged_SQL[:6] == "```SQL" and debugged_SQL[-3:] == "```":
+            SQL = debugged_SQL[7:-3]
+        elif debugged_SQL[:3] == "```" and debugged_SQL[-3:] == "```":
+            SQL = debugged_SQL[4:-3]
+        else:
+            print("Unrecognized format for the debugged SQL")
+            SQL = parse_sql_from_string(debugged_SQL)
+            if SQL[:5] == "error":
+                SQL = message['generated_SQL']  # fallback to the generated SQL
+        SQL = SQL.replace("\n", " ")
+        SQL = SQL.replace("\t", " ")
+        while "  " in SQL:
+            SQL = SQL.replace("  ", " ")
+        print("SQL after self-correction:", SQL)
+        message['final_sql'] = SQL
         message['send_to'] = SYSTEM_NAME

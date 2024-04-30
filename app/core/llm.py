@@ -33,7 +33,7 @@ class sqlcoder:
             "text-generation",
             model=self.model,
             tokenizer=self.tokenizer,
-            max_new_tokens=600,
+            max_new_tokens=1024,
             do_sample=False,
             return_full_text=False,
             num_beams=1,
@@ -60,7 +60,7 @@ class sqlcoder:
             "text-generation",
             model=self.model,
             tokenizer=self.tokenizer,
-            max_new_tokens=350,
+            max_new_tokens=512,
             do_sample=False,
             return_full_text=False,
             num_beams=1,
@@ -96,7 +96,7 @@ class GPT:
             n=1,
             stream=False,
             temperature=0.0,
-            max_tokens=600,
+            max_tokens=1024,
             top_p=1.0,
             frequency_penalty=0.0,
             presence_penalty=0.0,
@@ -111,7 +111,7 @@ class GPT:
             n=1,
             stream=False,
             temperature=0.0,
-            max_tokens=350,
+            max_tokens=512,
             top_p=1.0,
             frequency_penalty=0.0,
             presence_penalty=0.0,
@@ -134,10 +134,9 @@ class DeepSeek:
         inputs = self.tokenizer.apply_chat_template(
             messages, add_generation_prompt=True, return_tensors="pt").to(self.model.device)
         # tokenizer.eos_token_id is the id of <|EOT|> token
-        outputs = self.model.generate(inputs, max_new_tokens=512, do_sample=False,
+        outputs = self.model.generate(inputs, max_new_tokens=1024, do_sample=False,
                                       top_k=5, num_return_sequences=1, eos_token_id=self.tokenizer.eos_token_id)
-        print(self.tokenizer.decode(
-            outputs[0][len(inputs[0]):], skip_special_tokens=True))
+        # print(self.tokenizer.decode(outputs[0][len(inputs[0]):], skip_special_tokens=True))
         return self.tokenizer.decode(outputs[0][len(inputs[0]):], skip_special_tokens=True)
 
     def debug(self, prompt):
@@ -147,10 +146,9 @@ class DeepSeek:
         inputs = self.tokenizer.apply_chat_template(
             messages, add_generation_prompt=True, return_tensors="pt").to(self.model.device)
         # tokenizer.eos_token_id is the id of <|EOT|> token
-        outputs = self.model.generate(inputs, max_new_tokens=350, do_sample=False,
+        outputs = self.model.generate(inputs, max_new_tokens=512, do_sample=False,
                                       top_k=5, num_return_sequences=1, eos_token_id=self.tokenizer.eos_token_id)
-        print(self.tokenizer.decode(
-            outputs[0][len(inputs[0]):], skip_special_tokens=True))
+        # print(self.tokenizer.decode(outputs[0][len(inputs[0]):], skip_special_tokens=True))
         return self.tokenizer.decode(outputs[0][len(inputs[0]):], skip_special_tokens=True)
 
 
@@ -165,7 +163,7 @@ class modelhub_deepseek_coder_33b_instruct:
             model="public/deepseek-coder-33b-instruct@main",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.0,
-            max_tokens=600,
+            max_tokens=1024,
             top_p=1.0,
             stop=None
         )
@@ -176,7 +174,7 @@ class modelhub_deepseek_coder_33b_instruct:
             model="public/deepseek-coder-33b-instruct@main",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.0,
-            max_tokens=350,
+            max_tokens=512,
             top_p=1.0,
             stop=None
         )
@@ -194,7 +192,7 @@ class modelhub_qwen1_5_72b_chat:
             model="public/qwen1-5-72b-chat@main",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.0,
-            max_tokens=600,
+            max_tokens=1024,
             top_p=1.0,
             stop=None
         )
@@ -205,7 +203,7 @@ class modelhub_qwen1_5_72b_chat:
             model="public/qwen1-5-72b-chat@main",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.0,
-            max_tokens=350,
+            max_tokens=512,
             top_p=1.0,
             stop=None
         )

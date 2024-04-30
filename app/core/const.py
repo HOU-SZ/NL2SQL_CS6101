@@ -8,15 +8,18 @@ selector_template = """
 As an experienced and professional database administrator, your task is to analyze a user question and a database schema to provide relevant information. The database schema consists of table descriptions, each containing multiple column descriptions. Your goal is to identify the relevant tables and columns based on the user question and evidence provided.
 
 [Instruction]:
-1. Discard any table schema that is not related to the user question and evidence.
-2. Sort the columns in each relevant table in descending order of relevance and keep the top 6 columns.
+1. Discard any tables or columns that are not related to the user question and evidence.
+2. Sort the columns in each relevant table in descending order of relevance.
 3. Ensure that at least 3 tables are included in the final output JSON.
 4. The output should be in JSON format.
 
-Requirements:
-1. If a table has less than or equal to 10 columns, mark it as "keep_all".
+[Requirements]:
+1. If a table has LESS THAN or EQUAL TO 10 columns, mark it as "keep_all".
 2. If a table is completely irrelevant to the user question and evidence, mark it as "drop_all".
-3. Prioritize the columns in each relevant table based on their relevance.
+3. If some columns in a table are relevant to the user question and evidence, mark the table as an array containing the relevant column names.
+4. Prioritize the columns in each relevant table based on their relevance.
+5. Pelase make sure the selected columns are existing in the corresponding tables.
+6. The final output should should contain the oprations to be performed on each table.
 
 Here is a typical example:
 
@@ -73,7 +76,7 @@ loan: ['loan.account_id = account.account_id']
 What is the gender of the youngest client who opened account in the lowest average salary branch?
 【Evidence】
 Later birthdate refers to younger age; A11 refers to average salary
-【Answer】
+【Relevant tables and columns in JSON fromat】
 ```json
 {{
   "account": "keep_all",
@@ -97,7 +100,7 @@ Here is a new example, please start answering:
 {query}
 【Evidence】
 {evidence}
-【Answer】
+【Relevant tables and columns in JSON fromat】
 """
 
 decompose_template_spider = """
@@ -201,6 +204,7 @@ When generating SQL, we should always consider constraints:
 - If use max or min func, `JOIN <table>` FIRST, THEN use `SELECT MAX(<column>)` or `SELECT MIN(<column>)`
 - If [Value examples] of <column> has 'None' or None, use `JOIN <table>` or `WHERE <column> is NOT NULL` is better
 - If use `ORDER BY <column> ASC|DESC`, add `GROUP BY <column>` before to select distinct values
+- Pelase make sure the selected columns are existing in the corresponding tables.
 
 ==========
 
@@ -228,7 +232,7 @@ List school names of charter schools with an SAT excellence rate over the averag
 Charter schools refers to `Charter School (Y/N)` = 1 in the table frpm; Excellence rate = NumGE1500 / NumTstTakr
 
 
-Decompose the question into sub questions, considering 【Constraints】, and generate the SQL after thinking step by step:
+Decompose the question into sub questions, based on the given 【Database schema】, considering 【Constraints】, and generate the SQL after thinking step by step:
 Sub question 1: Get the average value of SAT excellence rate of charter schools.
 SQL
 ```sql
@@ -291,7 +295,7 @@ What is the gender of the youngest client who opened account in the lowest avera
 【Evidence】
 Later birthdate refers to younger age; A11 refers to average salary
 
-Decompose the question into sub questions, considering 【Constraints】, and generate the SQL after thinking step by step:
+Decompose the question into sub questions, based on the given 【Database schema】, considering 【Constraints】, and generate the SQL after thinking step by step:
 Sub question 1: What is the district_id of the branch with the lowest average salary?
 SQL
 ```sql
@@ -335,7 +339,7 @@ Question Solved.
 【Evidence】
 {evidence}
 
-Decompose the question into sub questions, considering 【Constraints】, and generate the SQL after thinking step by step:
+Decompose the question into sub questions, based on the given 【Database schema】, considering 【Constraints】, and generate the SQL after thinking step by step:
 """
 
 
@@ -382,6 +386,9 @@ refiner_template_din = """
 5) Pay attention to the columns that are used for the SELECT statement.
 6) Only change the GROUP BY clause when necessary (Avoid redundant columns in GROUP BY).
 7) Use GROUP BY on one column only.
+8) If the given SQL query is None, return correct SQL query.
+9) Return the fixed SQL query only (without any additional explanation).
+10) Pelase make sure the selected columns are existing in the corresponding tables.
 
 【Database schema】
 {desc_str}
@@ -391,6 +398,12 @@ refiner_template_din = """
 {query}
 【SQLite SQL Query】
 {sql}
+
+## Attention:
+1) If the given SQL query is None, generate the correct SQL query and return it (without any explanation).
+2) If the given SQL query is correct, return it as is (without any explanation).
+3) Return the fixed SQL query only (without any explanation).
+4) Please follow the SQL format to return the fixed SQL query.
 
 【Fixed SQL Query】
 """

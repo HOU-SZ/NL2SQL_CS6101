@@ -5,9 +5,10 @@ def apply_dictionary(sql_commands, foreign_keys, dictionary):
     modified_sql_commands = {}
     droped_tables = []
     droped_table_columns = {}
-    # print("sql_commands:", sql_commands)
 
     for sql_command in sql_commands:
+        sql_command.replace("\t", "")
+        sql_command.strip()
         if "`" in sql_command:
             sql_command = sql_command.replace("`", "")
         table_name_match = ""
@@ -36,14 +37,16 @@ def apply_dictionary(sql_commands, foreign_keys, dictionary):
                         column_name_match = re.search(r'"(\w+)"', line)
                         if not column_name_match:
                             column_name_match = re.search(r'(\w+)\s', line)
-                        if column_name_match and column_name_match.group(1) in columns_to_keep:
+                        # if the line is the last line of the create table command
+                        if len(line.strip()) > 0 and line.strip()[0] == ")":
+                            new_lines.append(line)
+                        elif column_name_match and column_name_match.group(1) in columns_to_keep:
                             new_lines.append(line)
                         elif column_name_match and column_name_match.group(1) not in columns_to_keep:
                             if table_name not in droped_table_columns:
                                 droped_table_columns[table_name] = []
                             droped_table_columns[table_name].append(
                                 column_name_match.group(1))
-                    new_lines.append(");")
                     modified_sql_commands[table_name] = "\n".join(
                         new_lines)
             else:

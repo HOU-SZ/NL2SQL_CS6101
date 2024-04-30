@@ -431,7 +431,7 @@ class Self_Corrector(BaseAgent):
                 pass
         print("Generated response:", debugged_SQL)
         SQL = None
-        if debugged_SQL[:6] == "SELECT":
+        if debugged_SQL[:6] == "SELECT" or debugged_SQL[:7] == " SELECT":
             SQL = debugged_SQL
         elif debugged_SQL[:6] == "```sql" and debugged_SQL[-3:] == "```":
             SQL = debugged_SQL[7:-3]

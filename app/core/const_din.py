@@ -447,7 +447,7 @@ refiner_prompt = """
 6) Only change the GROUP BY clause when necessary (Avoid redundant columns in GROUP BY).
 7) Use GROUP BY on one column only.
 8) If the given SQL query is None, return correct SQL query.
-9) Return the fixed SQL query only (without any additional information).
+9) Return the fixed SQL query only (without any additional explanation).
 
 【Database schema】
 {desc_str}
@@ -462,6 +462,7 @@ refiner_prompt = """
 1) If the given SQL query is None, generate the correct SQL query and return it (without any explanation).
 2) If the given SQL query is correct, return it as is (without any explanation).
 3) Return the fixed SQL query only (without any explanation).
-4) Please follow the format to return the fixed SQL query.
+4) Please follow the SQL format to return the fixed SQL query.
+
 【Fixed SQL Query】
 """

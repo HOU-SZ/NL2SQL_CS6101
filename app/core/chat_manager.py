@@ -1,7 +1,7 @@
 from core.agents import Selector, Decomposer, Refiner
 from core.agents_din import Schema_Linker, Classifier, Generator, Self_Corrector
 from core.const import SELECTOR_NAME, DECOMPOSER_NAME, REFINER_NAME, SYSTEM_NAME, MAX_ROUND
-from core.const_din import SCHEMA_LINKER, CLASSIFIER, GENERATOR, REFINER, SYSTEM_NAME
+from core.const_din import SCHEMA_LINKER, CLASSIFIER, GENERATOR, SELF_CORRECTOR, SYSTEM_NAME
 from core.llm import sqlcoder, GPT, DeepSeek
 import time
 

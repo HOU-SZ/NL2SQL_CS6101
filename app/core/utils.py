@@ -66,7 +66,7 @@ def parse_json(text: str) -> dict:
     start = text.find("```json")
     end = text.find("```", start + 7)
 
-    # 如果找到了 JSON 块
+    # 如果找到了 ```json xxxx ```格式的JSON 块
     if start != -1 and end != -1:
         json_string = text[start + 7: end]
 
@@ -82,12 +82,46 @@ def parse_json(text: str) -> dict:
             print(f"error: parse json error!\n")
             print(f"json_string: {json_string}\n\n")
             pass
+    # 如果找到了 ``` xxxx ```格式的JSON 块
+    elif start == -1 and end != -1:
+        start = text.find("```")
+        end = text.find("```", start + 3)
+        if start != -1 and end != -1:
+            json_string = text[start + 3: end]
+            try:
+                json_data = json.loads(json_string)
+                valid = check_selector_response(json_data)
+                if valid:
+                    return json_data
+                else:
+                    return {}
+            except:
+                print(f"error: parse json error!\n")
+                print(f"json_string: {json_string}\n\n")
+                pass
+    # 如果找到了 { xxxx }格式的JSON 块
+    elif start == -1 and end == -1:
+        start = text.find("{")
+        end = text.find("}")
+        if start != -1 and end != -1:
+            json_string = text[start: end + 1]
+            try:
+                json_data = json.loads(json_string)
+                valid = check_selector_response(json_data)
+                if valid:
+                    return json_data
+                else:
+                    return {}
+            except:
+                print(f"error: parse json error!\n")
+                print(f"json_string: {json_string}\n\n")
+                pass
 
     return {}
 
 
 def parse_sql_from_string(input_string):
-    sql_pattern = r'```sql(.*?)```'
+    sql_pattern = r'```sql(.*?)```'  # 匹配 ```sql xxx ```格式的SQL
     all_sqls = []
     # 将所有匹配到的都打印出来
     for match in re.finditer(sql_pattern, input_string, re.DOTALL):
@@ -96,7 +130,7 @@ def parse_sql_from_string(input_string):
     if all_sqls:
         return all_sqls[-1]
     else:
-        sql_pattern = r'```(.*?)```'
+        sql_pattern = r'```(.*?)```'  # 匹配 ``` xxx ```格式的SQL
         for match in re.finditer(sql_pattern, input_string, re.DOTALL):
             all_sqls.append(match.group(1).strip())
         if all_sqls:

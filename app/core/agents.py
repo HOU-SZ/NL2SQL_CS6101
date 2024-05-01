@@ -96,10 +96,10 @@ class Decomposer(BaseAgent):
             foreign_keys_str = None
         prompt = ""
         if self.prompt_type == "spider":
-            prompt = decompose_template_spider.format(desc_str="".join(
+            prompt = decompose_template_spider.format(db_type=self._message['db_type'], desc_str="".join(
                 message["modified_sql_commands"]), fk_str=foreign_keys_str, query=self._message['question'])
         else:
-            prompt = decompose_template_bird.format(desc_str="".join(
+            prompt = decompose_template_bird.format(db_type=self._message['db_type'], desc_str="".join(
                 message["modified_sql_commands"]), fk_str=foreign_keys_str, query=self._message['question'], evidence=None)
         print("prompt: \n", prompt)
         reply = self.llm.generate(prompt)
@@ -114,8 +114,10 @@ class Decomposer(BaseAgent):
             res = f'error: {str(e)}'
             print(res)
             time.sleep(1)
+        if res[:5] == "error":
+            res = None
 
-        message['final_sql'] = res
+        message['generated_SQL'] = res
         message['qa_pairs'] = qa_pairs
         message['fixed'] = False
         message['send_to'] = REFINER_NAME
@@ -148,7 +150,7 @@ class Refiner(BaseAgent):
         prompt = ""
         if self.use_din_refiner:
             prompt = refiner_template_din.format(
-                desc_str=self._message['create_table_sqls'], fk_str=self._message['foreign_keys_str'], query=self._message['question'], sql=message['final_sql'])
+                db_type=self._message['db_type'], desc_str=self._message['create_table_sqls'], fk_str=self._message['foreign_keys_str'], query=self._message['question'], sql=message['final_sql'])
         else:
             print("Not implemented yet")
             return None
@@ -175,12 +177,15 @@ class Refiner(BaseAgent):
         elif debugged_SQL[:3] == "```" and debugged_SQL[-3:] == "```":
             SQL = debugged_SQL[4:-3]
         else:
-            print("Unrecognized format for the debugged SQL")
             SQL = parse_sql_from_string(debugged_SQL)
             if SQL[:5] == "error":
+                print(
+                    "Unrecognized format for the debugged SQL, fallback to the generated SQL")
                 SQL = message['generated_SQL']  # fallback to the generated SQL
         SQL = SQL.replace("\n", " ")
         SQL = SQL.replace("\t", " ")
+        SQL = SQL.replace("`", "")
+        SQL = SQL.replace(",", "")
         while "  " in SQL:
             SQL = SQL.replace("  ", " ")
         print("SQL after self-correction:", SQL)

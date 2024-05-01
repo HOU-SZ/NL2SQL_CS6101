@@ -104,7 +104,7 @@ Here is a new example, please start answering:
 """
 
 decompose_template_spider = """
-Given a 【Database schema】 description, and the 【Question】, you need to use valid SQLite and understand the database, and then generate the corresponding SQL.
+Given a 【Database schema】 description, and the 【Question】, you need to use valid {db_type} and understand the database, and then generate the corresponding SQL.
 
 ==========
 
@@ -196,7 +196,7 @@ SQL
 """
 
 decompose_template_bird = """
-Given a 【Database schema】 description, a knowledge 【Evidence】 and the 【Question】, you need to use valid SQLite and understand the database and knowledge, and then decompose the question into subquestions for text-to-SQL generation.
+Given a 【Database schema】 description, a knowledge 【Evidence】 and the 【Question】, you need to use valid {db_type} and understand the database and knowledge, and then decompose the question into subquestions for text-to-SQL generation.
 When generating SQL, we should always consider constraints:
 【Constraints】
 - In `SELECT <column>`, just select needed columns in the 【Question】 without any unnecessary column or value
@@ -204,7 +204,9 @@ When generating SQL, we should always consider constraints:
 - If use max or min func, `JOIN <table>` FIRST, THEN use `SELECT MAX(<column>)` or `SELECT MIN(<column>)`
 - If [Value examples] of <column> has 'None' or None, use `JOIN <table>` or `WHERE <column> is NOT NULL` is better
 - If use `ORDER BY <column> ASC|DESC`, add `GROUP BY <column>` before to select distinct values
+- Use `LIMIT` to restrict the number of rows returned when necessary
 - Pelase make sure the selected columns are existing in the corresponding tables.
+- Please make sure the generated SQL is compatible with the {db_type} database.
 
 ==========
 
@@ -236,28 +238,28 @@ Decompose the question into sub questions, based on the given 【Database schema
 Sub question 1: Get the average value of SAT excellence rate of charter schools.
 SQL
 ```sql
-SELECT AVG(CAST(T2.`NumGE1500` AS REAL) / T2.`NumTstTakr`)
+SELECT AVG(CAST(T2.NumGE1500 AS REAL) / T2.NumTstTakr)
     FROM frpm AS T1
     INNER JOIN satscores AS T2
-    ON T1.`CDSCode` = T2.`cds`
-    WHERE T1.`Charter School (Y/N)` = 1
+    ON T1.CDSCode = T2.cds
+    WHERE T1.Charter School (Y/N) = 1
 ```
 
 Sub question 2: List out school names of charter schools with an SAT excellence rate over the average.
 SQL
 ```sql
-SELECT T2.`sname`
+SELECT T2.sname
   FROM frpm AS T1
   INNER JOIN satscores AS T2
-  ON T1.`CDSCode` = T2.`cds`
-  WHERE T2.`sname` IS NOT NULL
-  AND T1.`Charter School (Y/N)` = 1
-  AND CAST(T2.`NumGE1500` AS REAL) / T2.`NumTstTakr` > (
-    SELECT AVG(CAST(T4.`NumGE1500` AS REAL) / T4.`NumTstTakr`)
+  ON T1.CDSCode = T2.cds
+  WHERE T2.sname IS NOT NULL
+  AND T1.Charter School (Y/N) = 1
+  AND CAST(T2.NumGE1500 AS REAL) / T2.NumTstTakr > (
+    SELECT AVG(CAST(T4.NumGE1500 AS REAL) / T4.NumTstTakr)
     FROM frpm AS T3
     INNER JOIN satscores AS T4
-    ON T3.`CDSCode` = T4.`cds`
-    WHERE T3.`Charter School (Y/N)` = 1
+    ON T3.CDSCode = T4.cds
+    WHERE T3.Charter School (Y/N) = 1
   )
 ```
 
@@ -299,31 +301,31 @@ Decompose the question into sub questions, based on the given 【Database schema
 Sub question 1: What is the district_id of the branch with the lowest average salary?
 SQL
 ```sql
-SELECT `district_id`
+SELECT district_id
   FROM district
-  ORDER BY `A11` ASC
+  ORDER BY A11 ASC
   LIMIT 1
 ```
 
 Sub question 2: What is the youngest client who opened account in the lowest average salary branch?
 SQL
 ```sql
-SELECT T1.`client_id`
+SELECT T1.client_id
   FROM client AS T1
   INNER JOIN district AS T2
-  ON T1.`district_id` = T2.`district_id`
-  ORDER BY T2.`A11` ASC, T1.`birth_date` DESC 
+  ON T1.district_id = T2.district_id
+  ORDER BY T2.A11 ASC, T1.birth_date DESC 
   LIMIT 1
 ```
 
 Sub question 3: What is the gender of the youngest client who opened account in the lowest average salary branch?
 SQL
 ```sql
-SELECT T1.`gender`
+SELECT T1.gender
   FROM client AS T1
   INNER JOIN district AS T2
-  ON T1.`district_id` = T2.`district_id`
-  ORDER BY T2.`A11` ASC, T1.`birth_date` DESC 
+  ON T1.district_id = T2.district_id
+  ORDER BY T2.A11 ASC, T1.birth_date DESC 
   LIMIT 1 
 ```
 Question Solved.
@@ -366,8 +368,8 @@ COMMENT {query}
 ```sql
 {sql}
 ```
-【SQLite error】 
-{sqlite_error}
+【SQL error】 
+{sql_error}
 【Exception class】
 {exception_class}
 
@@ -377,7 +379,7 @@ Now please fixup old SQL and generate new SQL again.
 
 
 refiner_template_din = """
-#### For the given question, use the provided database schema, and foreign keys to fix the given SQLite SQL QUERY for any issues. If there are any problems, fix them. If there are no issues, return the SQLite SQL QUERY as is.
+#### For the given question, use the provided database schema, and foreign keys to fix the given {db_type} SQL QUERY for any issues. If there are any problems, fix them. If there are no issues, return the {db_type} SQL QUERY as is.
 #### Use the following instructions for fixing the SQL QUERY:
 1) Use the database values that are explicitly mentioned in the question.
 2) Pay attention to the columns that are used for the JOIN by using the Foreign_keys.
@@ -386,9 +388,10 @@ refiner_template_din = """
 5) Pay attention to the columns that are used for the SELECT statement.
 6) Only change the GROUP BY clause when necessary (Avoid redundant columns in GROUP BY).
 7) Use GROUP BY on one column only.
-8) If the given SQL query is None, return correct SQL query.
-9) Return the fixed SQL query only (without any additional explanation).
-10) Pelase make sure the selected columns are existing in the corresponding tables.
+8) Use LIMIT to restrict the number of rows returned when necessary
+9) If the given SQL query is None, return correct SQL query.
+10) Return the fixed SQL query only (without any additional explanation).
+11) If selected columns in the {db_type} SQL QUERY are not existed in the corresponding tables, please replace the column names with the correct column names in the FIXED SQL QUERY.
 
 【Database schema】
 {desc_str}
@@ -396,14 +399,16 @@ refiner_template_din = """
 {fk_str}
 【Question】
 {query}
-【SQLite SQL Query】
+【{db_type} SQL Query】
 {sql}
 
 ## Attention:
 1) If the given SQL query is None, generate the correct SQL query and return it (without any explanation).
 2) If the given SQL query is correct, return it as is (without any explanation).
-3) Return the fixed SQL query only (without any explanation).
-4) Please follow the SQL format to return the fixed SQL query.
+3) If selected columns in the {db_type} SQL QUERY are not existed in the corresponding tables, please replace the column names with the correct column names in the FIXED SQL QUERY.
+4) Return the fixed SQL query only (without any explanation).
+5) Please follow the SQL format to return the fixed SQL query.
+6) Please make sure the generated SQL is compatible with the {db_type} database.
 
 【Fixed SQL Query】
 """

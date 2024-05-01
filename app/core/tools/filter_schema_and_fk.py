@@ -40,6 +40,7 @@ def apply_dictionary(sql_commands, foreign_keys, dictionary):
                         # if the line is the last line of the create table command
                         if len(line.strip()) > 0 and line.strip()[0] == ")":
                             new_lines.append(line)
+                            new_lines.append("\n")
                         elif column_name_match and column_name_match.group(1) in columns_to_keep:
                             new_lines.append(line)
                         elif column_name_match and column_name_match.group(1) not in columns_to_keep:
@@ -50,8 +51,8 @@ def apply_dictionary(sql_commands, foreign_keys, dictionary):
                     modified_sql_commands[table_name] = "\n".join(
                         new_lines)
             else:
-                modified_sql_commands[table_name] = sql_command
-
+                continue
+                # modified_sql_commands[table_name] = sql_command
     # Remove foreign keys constraints referencing dropped tables (right of the "=" sign)
     for table in droped_tables:
         for table_name, fks in foreign_keys.items():
@@ -298,11 +299,23 @@ if __name__ == "__main__":
                 treasury_stock DOUBLE COMMENT '库存股', 
                 undstrbtd_profit DOUBLE COMMENT '未分配利润', 
                 PRIMARY KEY (date, instrument, report_date)
-            )DEFAULT CHARSET=utf8mb4 COMMENT='资产负债表' ENGINE=InnoDB COLLATE utf8mb4_unicode_ci
-            ''']
+            )DEFAULT CHARSET=utf8mb4 COMMENT='资产负债表' ENGINE=InnoDB COLLATE utf8mb4_unicode_ci''',
+        '''CREATE TABLE basic_info_CN_STOCK_A (
+                instrument VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '证券代码', 
+                delist_date DATE COMMENT '退市日期，如果未退市，则为pandas.NaT', 
+                company_type VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_general_ci COMMENT '公司类型', 
+                company_name VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_general_ci COMMENT '公司名称', 
+                company_province VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_general_ci COMMENT '公司省份', 
+                list_board VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_general_ci COMMENT '上市板', 
+                company_found_date DATETIME COMMENT '公司成立日期', 
+                name VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_general_ci COMMENT '证券名称', 
+                list_date DATE COMMENT '上市日期', 
+                PRIMARY KEY (instrument)
+            )COMMENT='A股股票基本信息' DEFAULT CHARSET=utf8mb3 ENGINE=InnoDB'''
+    ]
     foreign_keys_2 = {}
     dictionary_2 = {
-        "balance_sheet_CN_STOCK_A": ["date", "instrument", "report_date"]
+        "balance_sheet_CN_STOCK_A": ["date", "instrument", "report_date"], "basic_info_CN_STOCK_A": ["company_province"],
     }
 
     modified_sql_commands, foreign_keys = apply_dictionary(

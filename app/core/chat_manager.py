@@ -7,9 +7,10 @@ import time
 
 
 class ChatManager(object):
-    def __init__(self, db_name, db_description, tables, table_info, prompt_type, llm):
+    def __init__(self, db_name, db_description, db_type, tables, table_info, prompt_type, llm):
         self.db_name = db_name
         self.db_description = db_description
+        self.db_type = db_type
         self.tables = tables
         self.table_info = table_info
         # self.llm = sqlcoder()

@@ -80,6 +80,9 @@ except Exception as e:
     print("Error in starting llm: ", e)
     sys.exit("Error in starting llm: ", e)
 
+count = 0
+records_dict = {}
+
 
 @ app.route("/")
 def hello_world():
@@ -88,12 +91,14 @@ def hello_world():
 
 @ app.route("/predict", methods=["POST"])
 def predict():
+    count += 1
     content_type = request.headers.get("Content-Type")
     if content_type != "application/json":
         return {
             "success": False,
             "message": "Content-Type must be application/json"
         }
+    print("count:", count)  # record the number of requests
     print("request:", request)
     request_json = request.json
     print("request_json:", request_json)
@@ -107,14 +112,22 @@ def predict():
                 question, db_name, db_description, tables, table_info, llm, db_tool)
         else:
             sql_query = run_generation_mac(
-                question, db_name, db_description, tables, table_info, llm)
+                question, db_name, db_description, db_type, tables, table_info, llm)
 
     except Exception as e:
         print("Error: ", e)
         return {
             "success": False,
-            "message": str(e)
+            "message": [str(e)]
         }
+    print(f"SQL query: {sql_query}")
+    dict_key = f"record_{count}"
+    records_dict[dict_key] = {
+        "question": question,
+        "sql_query": sql_query
+    }
+    if count % 10 == 0:
+        print("records_dict: ", records_dict)
     return {
         "success": True,
         "sql_queries": [

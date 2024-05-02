@@ -55,7 +55,11 @@ class Selector(BaseAgent):
         print("extracted_schema_dict: \n", extracted_schema_dict)
         modified_sql_commands, modified_foreign_keys = apply_dictionary(
             create_table_sqls, foreign_keys, extracted_schema_dict)
-
+        if modified_sql_commands is None or len(modified_sql_commands) == 0:
+            print(
+                "modidied_sql_commands is None or empty, fallback to the original schema")
+            modified_sql_commands = create_table_sqls
+            modified_foreign_keys = foreign_keys
         print("modified_sql_commands: \n")
         for sql_command in modified_sql_commands:
             print(sql_command)

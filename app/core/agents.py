@@ -150,7 +150,7 @@ class Refiner(BaseAgent):
         prompt = ""
         if self.use_din_refiner:
             prompt = refiner_template_din.format(
-                db_type=self._message['db_type'], desc_str=self._message['create_table_sqls'], fk_str=self._message['foreign_keys_str'], query=self._message['question'], sql=message['final_sql'])
+                db_type=self._message['db_type'], desc_str=self._message['create_table_sqls'], fk_str=self._message['foreign_keys_str'], query=self._message['question'], sql=message['generated_SQL'])
         else:
             print("Not implemented yet")
             return None

@@ -6,6 +6,9 @@ import argparse
 import os
 from core.service import run_generation_mac, run_genration_din
 from core.llm import sqlcoder, GPT, DeepSeek, modelhub_deepseek_coder_33b_instruct, modelhub_qwen1_5_72b_chat
+from multiprocessing import Value
+
+counter = Value('i', 0)
 app = Flask(__name__)
 
 print("=============Starting service==============")
@@ -80,9 +83,6 @@ except Exception as e:
     print("Error in starting llm: ", e)
     sys.exit("Error in starting llm: ", e)
 
-count = 0
-records_dict = {}
-
 
 @ app.route("/")
 def hello_world():
@@ -91,7 +91,10 @@ def hello_world():
 
 @ app.route("/predict", methods=["POST"])
 def predict():
-    count += 1
+    with counter.get_lock():
+        counter.value += 1
+        out = counter.value
+    count = out
     content_type = request.headers.get("Content-Type")
     if content_type != "application/json":
         return {
@@ -105,7 +108,7 @@ def predict():
     question = request_json.get("natural_language_query")
     print(f"Question: {question}")
 
-    # sql_query = "SELECT ......"
+    sql_query = ""
     try:
         if method == "din":
             sql_query = run_genration_din(
@@ -120,14 +123,21 @@ def predict():
             "success": False,
             "message": [str(e)]
         }
-    print(f"SQL query: {sql_query}")
-    dict_key = f"record_{count}"
-    records_dict[dict_key] = {
-        "question": question,
-        "sql_query": sql_query
-    }
+    print(f"Returned SQL query: {sql_query}")
+    # save the count, db, question, and sql_query to the records json file
+    with open("records.json", "a", encoding='UTF-8') as f:
+        record = {
+            "count": count,
+            "db": db_name,
+            "question": question,
+            "sql_query": sql_query
+        }
+        f.write(json.dumps(record, ensure_ascii=False) + "\n")
     if count % 10 == 0:
-        print("records_dict: ", records_dict)
+        # print the records every 10 requests
+        with open("records.json", "r", encoding='UTF-8') as f:
+            records = f.readlines()
+            print("records: ", records)
     return {
         "success": True,
         "sql_queries": [

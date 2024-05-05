@@ -19,6 +19,8 @@ def get_table_and_columns_by_similarity(embedder: SentenceTransformer, fields: l
     """
     results = []
     selected_tables_and_columns = []
+    if comments_list is None or len(comments_list) == 0:
+        return results, selected_tables_and_columns
     for field in fields:
         sorted_comments_list = sorted(comments_list, key=lambda x: calculate_similarity(
             embedder, list(x.keys())[0], field), reverse=True)

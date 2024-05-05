@@ -96,6 +96,10 @@ class Selector(BaseAgent):
         results, selected_tables_and_columns = get_table_and_columns_by_similarity(
             embedder, message['fields'], comments_list)
         print("table_and_columns: \n", selected_tables_and_columns)
+        if selected_tables_and_columns is None or len(selected_tables_and_columns) == 0:
+            print(
+                "selected_tables_and_columns is None or empty, fallback to the original schema")
+            selected_tables_and_columns = []
         for item in selected_tables_and_columns:
             lst = item.split(".")
             table_name = lst[0]

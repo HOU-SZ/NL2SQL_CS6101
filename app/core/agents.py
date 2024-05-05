@@ -4,10 +4,13 @@ import sqlite3
 import time
 
 import openai
-from core.const import SELECTOR_NAME, DECOMPOSER_NAME, REFINER_NAME, SYSTEM_NAME, selector_template, decompose_template_spider, decompose_template_bird, refiner_template, refiner_template_din
-from core.llm import sqlcoder
+from core.const import SELECTOR_NAME, DECOMPOSER_NAME, REFINER_NAME, FIELD_EXTRACTOR_NAME, SYSTEM_NAME, selector_template, decompose_template_spider, decompose_template_bird, refiner_template, refiner_template_din, field_extractor_template
+from core.llm import modelhub_qwen1_5_72b_chat, GPT
 from core.utils import parse_json, parse_sql_from_string, get_create_table_sqls, get_table_data, extract_foreign_keys
 from core.tools.filter_schema_and_fk import apply_dictionary
+from core.tools.extract_comments import extract_comments
+from core.tools.get_table_and_columns import get_table_and_columns_by_similarity
+from sentence_transformers import SentenceTransformer
 
 
 class BaseAgent(metaclass=abc.ABCMeta):
@@ -17,6 +20,40 @@ class BaseAgent(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def talk(self, message: dict):
         pass
+
+
+class FieldExtractor(BaseAgent):
+    """
+    Extract fields from the question
+    """
+    name = FIELD_EXTRACTOR_NAME
+    description = "Extract fields from the question"
+
+    def __init__(self, db_name, db_description, tables, table_info, llm):
+        super().__init__()
+        self.db_name = db_name
+        self.db_description = db_description
+        self.tables = tables
+        self.table_info = table_info
+        self.llm = modelhub_qwen1_5_72b_chat()
+        self._message = {}
+
+    def talk(self, message: dict):
+        if message['send_to'] != self.name:
+            return
+        self._message = message
+        prompt = field_extractor_template.format(
+            question=self._message['question'])
+        print("prompt: \n", prompt)
+        reply = self.llm.generate(prompt)
+        print("reply: \n", reply)
+        start = reply.find("[")
+        end = reply.find("]")
+        reply = reply[start+1:end]
+        fields = re.findall(r"[\w]+", reply)
+        print("fields: \n", fields)
+        message['fields'] = fields
+        message['send_to'] = SELECTOR_NAME
 
 
 class Selector(BaseAgent):
@@ -53,6 +90,27 @@ class Selector(BaseAgent):
         print("reply: \n", reply)
         extracted_schema_dict = parse_json(reply)
         print("extracted_schema_dict: \n", extracted_schema_dict)
+        # supplement the schema with the extracted fileds from the question
+        comments, comments_list = extract_comments(create_table_sqls)
+        embedder = SentenceTransformer('uer/sbert-base-chinese-nli')
+        results, selected_tables_and_columns = get_table_and_columns_by_similarity(
+            embedder, message['fields'], comments_list)
+        print("table_and_columns: \n", selected_tables_and_columns)
+        for item in selected_tables_and_columns:
+            lst = item.split(".")
+            table_name = lst[0]
+            column_name = lst[1]
+            if table_name in extracted_schema_dict:
+                if extracted_schema_dict[table_name] == "drop_all":
+                    extracted_schema_dict[table_name] = [column_name]
+                elif extracted_schema_dict[table_name] == "keep_all":
+                    continue
+                elif type(extracted_schema_dict[table_name]) == list:
+                    extracted_schema_dict[table_name].append(column_name)
+            else:
+                extracted_schema_dict[table_name] = [column_name]
+        print("extracted_schema_dict after supplement: \n", extracted_schema_dict)
+
         modified_sql_commands, modified_foreign_keys = apply_dictionary(
             create_table_sqls, foreign_keys, extracted_schema_dict)
         if modified_sql_commands is None or len(modified_sql_commands) == 0:

@@ -1,6 +1,7 @@
 SELECTOR_NAME = 'Selector'
 DECOMPOSER_NAME = 'Decomposer'
 REFINER_NAME = 'Refiner'
+FIELD_EXTRACTOR_NAME = 'FieldExtractor'
 SYSTEM_NAME = 'System'
 MAX_ROUND = 3  # max try times of one agent talk
 
@@ -411,4 +412,124 @@ refiner_template_din = """
 6) Please make sure the generated SQL is compatible with the {db_type} database.
 
 【Fixed SQL Query】
+"""
+
+field_extractor_template = """
+Extract the main target field name from the given questions.
+
+/* Some example questions and extracted target fields */
+Question: 2022年华夏银行的现金等价物的期末余额是多少？
+Target fields: [现金等价物的期末余额, 公司名称, 报告日期]
+
+Question: 比较广东的格力电器和比亚迪，哪家公司在2022年的手续费及佣金收入更高？
+Target fields: [手续费及佣金收入, 公司名称, 公司省份, 报告日期]
+
+Question: 请计算2022年上港集团的固定资产及在建工程占总资产的比例
+Target fields: [固定资产, 在建工程, 总资产, 公司名称, 报告日期]
+
+Question: 请列出2022年应付手续费及佣金占总负债比例最高的五家公司？
+Target fields: [应付手续费及佣金, 总负债, 公司名称, 报告日期]
+
+Question: 同享科技2023年归属于母公司所有者的净利润年增长率（YoY）是多少？
+Target fields: [归属于母公司所有者的净利润, 公司名称, 报告日期]
+
+Question: 2023第一季度上港集团的营业总收入环比增长率是多少？
+Target fields: [营业总收入, 公司名称, 报告日期]
+
+Question: 请问在广东省成立的公司在总公司数量中占比多少？
+Target fields: [公司省份]
+
+Question: 查询上市公司所在地为上海的公司数量？
+Target fields: [公司省份]
+
+Question: 查看2023在科创板上市的公司数量的同比增长？
+Target fields: [上市板块]
+
+Question: 请找出上市日期最早的五家公司的股票代码，公司名称和上市日期。
+Target fields: [股票代码, 公司名称, 上市日期]
+
+Question: 请找出所有已退市的公司的股票代码和退市日期。
+Target fields: [股票代码, 退市日期]
+
+Question: 请找出所有在北京成立的公司的股票代码和公司名称。
+Target fields: [公司名称, 公司省份, 股票代码]
+
+/* Please extract the target fields from the following question */
+Question: {question}
+Target fields:
+"""
+
+
+extractor_examples = """
+Question: 请找出所有已退市的公司的股票代码和退市日期。
+Target fields: ['股票代码', '退市日期']
+
+Question: 2022年华夏银行的现金等价物的期末余额是多少？
+Target fields: ['现金等价物的期末余额', '公司名称', '报告日期']
+
+Question: 2022年华夏银行和格力电器哪家公司的经营活动现金流入小计更高？
+Target fields: ['经营活动现金流入小计', '公司名称']
+
+Question: 比较广东的格力电器和比亚迪，哪家公司在2022年的手续费及佣金收入更高？
+Target fields: ['手续费及佣金收入', '公司名称', '公司省份', '报告日期']
+
+Question: 长虹能源和同享科技在2022年的营业总成本中，哪家公司的财务费用更高？
+Target fields: ['营业总成本', '财务费用', '公司名称', '报告日期']
+
+Question: 2022年华夏银行的手续费及佣金收入和民生银行相比如何？
+Target fields: ['手续费及佣金收入', '公司名称', '报告日期']
+
+Question: 格力电器和比亚迪在2022年的基本每股收益中，哪家公司的收益更高？
+Target fields: ['基本每股收益', '公司名称', '报告日期']
+
+Question: 2022年比亚迪的负债合计和所有者权益合计中，哪个更高？
+Target fields: ['负债合计', '所有者权益合计', '公司名称', '报告日期']
+
+Question: 请计算2022年上港集团的固定资产及在建工程占总资产的比例
+Target fields: ['固定资产', '在建工程', '总资产', '公司名称', '报告日期']
+
+Question: 2022年宝钢股份的存货和应收账款占资产总计的比例是多少？
+Target fields: ['存货', '应收账款', '资产总计', '公司名称', '报告日期']
+
+Question: 请列出2022年应付手续费及佣金占总负债比例最高的五家公司？
+Target fields: ['应付手续费及佣金', '总负债', '公司名称', '报告日期']
+
+Question: 2022年哪些公司的一年内到期的非流动负债增长最快？
+Target fields: ['一年内到期的非流动负债', '公司名称', '报告日期']
+
+Question: 同享科技2023年归属于母公司所有者的净利润年增长率（YoY）是多少？
+Target fields: ['归属于母公司所有者的净利润', '公司名称', '报告日期']
+
+Question: 2023第一季度上港集团的营业总收入环比增长率是多少？
+Target fields: ['营业总收入', '公司名称', '报告日期']
+
+Question: 请问在广东省成立的公司在总公司数量中占比多少？
+Target fields: ['公司省份']
+
+Question: 查询上市公司所在地为上海的公司数量？
+Target fields: ['公司省份']
+
+Question: 查看2023在科创板上市的公司数量的同比增长？
+Target fields: ['上市板块']
+
+Question: 请找出上市日期最早的五家公司的股票代码，公司名称和上市日期。
+Target fields: ['股票代码', '公司名称', '上市日期']
+
+Question: 哪家公司最早成立？
+Target fields: ['公司名称', '公司成立日期']
+
+Question: 哪家在广东成立的公司上市日期最早？
+Target fields: ['公司名称', '公司省份', '上市日期']
+
+Question: 最新上市的科创板公司是哪一家？
+Target fields: ['公司名称', '上市板块', '上市日期']
+
+Question: 请找出所有已退市的公司的股票代码和退市日期。
+Target fields: ['股票代码', '退市日期']
+
+Question: 请找出所有在北京成立的公司的股票代码和公司名称。
+Target fields: ['公司名称', '公司省份', '股票代码']
+
+Question: 截至去年一季度，广东省上市公司数量占全国上市公司总数的比重为何？
+Target fields: ['公司省份', '上市日期']
 """

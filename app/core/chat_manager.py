@@ -1,6 +1,6 @@
-from core.agents import Selector, Decomposer, Refiner
+from core.agents import FieldExtractor, Selector, Decomposer, Refiner
 from core.agents_din import Schema_Linker, Classifier, Generator, Self_Corrector
-from core.const import SELECTOR_NAME, DECOMPOSER_NAME, REFINER_NAME, SYSTEM_NAME, MAX_ROUND
+from core.const import FIELD_EXTRACTOR_NAME, SELECTOR_NAME, DECOMPOSER_NAME, REFINER_NAME, SYSTEM_NAME, MAX_ROUND
 from core.const_din import SCHEMA_LINKER, CLASSIFIER, GENERATOR, SELF_CORRECTOR, SYSTEM_NAME
 from core.llm import sqlcoder, GPT, DeepSeek
 import time
@@ -18,6 +18,8 @@ class ChatManager(object):
         # self.llm = DeepSeek()
         self.llm = llm
         self.chat_group = [
+            FieldExtractor(db_name, db_description,
+                           tables, table_info, self.llm),
             Selector(db_name, db_description, tables, table_info, self.llm),
             Decomposer(db_name, db_description, tables,
                        table_info, self.llm, prompt_type),
@@ -35,7 +37,7 @@ class ChatManager(object):
         start_time = time.time()
         # in the first round, pass message to prune
         if user_message['send_to'] == SYSTEM_NAME:
-            user_message['send_to'] = SELECTOR_NAME
+            user_message['send_to'] = FIELD_EXTRACTOR_NAME
         for _ in range(MAX_ROUND):  # start chat in group
             self._chat_single_round(user_message)
             if user_message['send_to'] == SYSTEM_NAME:  # should terminate chat

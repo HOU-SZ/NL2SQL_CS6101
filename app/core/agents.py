@@ -44,9 +44,9 @@ class FieldExtractor(BaseAgent):
         self._message = message
         prompt = field_extractor_template.format(
             question=self._message['question'])
-        print("prompt: \n", prompt)
+        # print("prompt: \n", prompt)
         reply = self.llm.generate(prompt)
-        print("reply: \n", reply)
+        print("FieldExtractor reply: \n", reply)
         start = reply.find("[")
         end = reply.find("]")
         reply = reply[start+1:end]
@@ -85,14 +85,14 @@ class Selector(BaseAgent):
             foreign_keys_str = None
         prompt = selector_template.format(db_id=self.db_name, desc_str="".join(
             create_table_sqls), fk_str=foreign_keys_str, query=self._message['question'], evidence=None)
-        print("prompt: \n", prompt)
+        # print("prompt: \n", prompt)
         reply = self.llm.generate(prompt)
-        print("reply: \n", reply)
+        print("Selector reply: \n", reply)
         extracted_schema_dict = parse_json(reply)
         print("extracted_schema_dict: \n", extracted_schema_dict)
         # supplement the schema with the extracted fileds from the question
         comments, comments_list = extract_comments(create_table_sqls)
-        embedder = SentenceTransformer('uer/sbert-base-chinese-nli')
+        embedder = SentenceTransformer('./sbert-base-chinese-nli')
         results, selected_tables_and_columns = get_table_and_columns_by_similarity(
             embedder, message['fields'], comments_list)
         print("table_and_columns: \n", selected_tables_and_columns)
@@ -167,9 +167,9 @@ class Decomposer(BaseAgent):
         else:
             prompt = decompose_template_bird.format(db_type=self._message['db_type'], desc_str="".join(
                 message["modified_sql_commands"]), fk_str=foreign_keys_str, query=self._message['question'], evidence=None)
-        print("prompt: \n", prompt)
+        # print("prompt: \n", prompt)
         reply = self.llm.generate(prompt)
-        print("reply: \n", reply)
+        print("Decomposer reply: \n", reply)
 
         res = ''
         qa_pairs = reply
@@ -220,7 +220,7 @@ class Refiner(BaseAgent):
         else:
             print("Not implemented yet")
             return None
-        print("prompt: \n", prompt)
+        # print("prompt: \n", prompt)
         debugged_SQL = None
         while debugged_SQL is None:
             try:
@@ -232,7 +232,7 @@ class Refiner(BaseAgent):
             except Exception as error:
                 print("===============Error in the refiner module:", error)
                 pass
-        print("Generated response:", debugged_SQL)
+        print("Refiner reply:", debugged_SQL)
         SQL = None
         if debugged_SQL[:6] == "SELECT" or debugged_SQL[:7] == " SELECT":
             SQL = debugged_SQL
@@ -251,9 +251,11 @@ class Refiner(BaseAgent):
         SQL = SQL.replace("\n", " ")
         SQL = SQL.replace("\t", " ")
         SQL = SQL.replace("`", "")
-        SQL = SQL.replace(",", "")
         while "  " in SQL:
             SQL = SQL.replace("  ", " ")
+        SQL = SQL.strip()
+        if SQL[:-1] != ";":
+            SQL += ";"  # add a semicolon at the end
         print("SQL after self-correction:", SQL)
         message['final_sql'] = SQL
         message['send_to'] = SYSTEM_NAME

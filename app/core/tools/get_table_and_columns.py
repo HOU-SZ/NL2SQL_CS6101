@@ -25,15 +25,15 @@ def get_table_and_columns_by_similarity(embedder: SentenceTransformer, fields: l
         sorted_comments_list = sorted(comments_list, key=lambda x: calculate_similarity(
             embedder, list(x.keys())[0], field), reverse=True)
         selected_comments = []
-        current_similarity = 0
+        top_similarity = 0
         for i in range(len(sorted_comments_list)):
             comment = sorted_comments_list[i]
             if i == 0:
-                current_similarity = calculate_similarity(
+                top_similarity = calculate_similarity(
                     embedder, list(comment.keys())[0], field)
                 selected_comments.append(comment)
                 selected_tables_and_columns.append(list(comment.values())[0])
-            elif current_similarity - calculate_similarity(embedder, list(comment.keys())[0], field) < 0.1:
+            elif top_similarity - calculate_similarity(embedder, list(comment.keys())[0], field) < 0.1:
                 selected_comments.append(comment)
                 selected_tables_and_columns.append(list(comment.values())[0])
         results.append({field: selected_comments})

@@ -8,7 +8,7 @@ from core.service import run_generation_mac, run_genration_din
 from core.llm import sqlcoder, GPT, DeepSeek, modelhub_deepseek_coder_33b_instruct, modelhub_qwen1_5_72b_chat
 from multiprocessing import Value
 
-counter = Value('i', 0)
+counter = Value('i', -1)
 app = Flask(__name__)
 
 print("=============Starting service==============")

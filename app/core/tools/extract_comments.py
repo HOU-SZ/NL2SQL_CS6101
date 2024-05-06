@@ -31,7 +31,7 @@ def extract_comments(sql_commands):
                         comment_match = re.search(r"COMMENT '(\w+)'", line)
                         if comment_match:
                             comment = comment_match.group(1)
-                            print(table_name, column_name, comment)
+                            # print(table_name, column_name, comment)
                             if table_name not in comments:
                                 comments[table_name] = {}
                             comments[table_name][column_name] = comment

@@ -206,6 +206,7 @@ When generating SQL, we should always consider constraints:
 - If [Value examples] of <column> has 'None' or None, use `JOIN <table>` or `WHERE <column> is NOT NULL` is better
 - If use `ORDER BY <column> ASC|DESC`, add `GROUP BY <column>` before to select distinct values
 - Use `LIMIT` to restrict the number of rows returned when necessary
+- Use `AS` to give an alias to the table name or column name or subquery
 - Pelase make sure the selected columns are existing in the corresponding tables.
 - Please make sure the generated SQL is compatible with the {db_type} database.
 

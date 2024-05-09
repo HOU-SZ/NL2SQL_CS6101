@@ -1,4 +1,4 @@
-from app.core.tools.fix_column_names import fix_sql
+from core.tools.fix_column_names import fix_sql
 from core.chat_manager import ChatManager, ChatManager_DIN
 from core.const import SYSTEM_NAME
 

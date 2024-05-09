@@ -31,6 +31,40 @@ def apply_dictionary(sql_commands, foreign_keys, dictionary):
                 elif isinstance(dictionary[table_name], list):
                     # Keep only specified columns
                     columns_to_keep = set(dictionary[table_name])
+                    if "PRIMARY KEY" in sql_command:
+                        primary_key = re.search(
+                            r'PRIMARY KEY \((.*?)\)', sql_command)
+                        if primary_key is not None:
+                            primary_key = primary_key.group(1)
+                        if primary_key is None:
+                            primary_key = re.search(
+                                r'PRIMARY KEY\((.*?)\)', sql_command)
+                            if primary_key is not None:
+                                primary_key = primary_key.group(1)
+                        primary_key_columns = set(
+                            re.findall(r'"(.*?)"', primary_key))
+                        if len(primary_key_columns) == 0:
+                            primary_key_columns = set(
+                                re.findall(r'(\w+)', primary_key))
+                        columns_to_keep = columns_to_keep.union(
+                            primary_key_columns)
+                    if "FOREIGN KEY" in sql_command:
+                        foreign_key = re.search(
+                            r'FOREIGN KEY \((.*?)\) REFERENCES', sql_command)
+                        if foreign_key is not None:
+                            foreign_key = foreign_key.group(1)
+                        if foreign_key is None:
+                            foreign_key = re.search(
+                                r'FOREIGN KEY\((.*?)\) REFERENCES', sql_command)
+                            if foreign_key is not None:
+                                foreign_key = foreign_key.group(1)
+                        foreign_key_columns = set(
+                            re.findall(r'"(.*?)"', foreign_key))
+                        if len(foreign_key_columns) == 0:
+                            foreign_key_columns = set(
+                                re.findall(r'(\w+)', foreign_key))
+                        columns_to_keep = columns_to_keep.union(
+                            foreign_key_columns)
                     lines = sql_command.split("\n")
                     new_lines = [lines[0]]  # Keep the CREATE TABLE line
                     for line in lines[1:]:
@@ -41,6 +75,10 @@ def apply_dictionary(sql_commands, foreign_keys, dictionary):
                         if len(line.strip()) > 0 and line.strip()[0] == ")":
                             new_lines.append(line)
                             new_lines.append("\n")
+                        elif "PRIMARY KEY" in line:
+                            new_lines.append(line)
+                        elif "FOREIGN KEY" in line:
+                            new_lines.append(line)
                         elif column_name_match and column_name_match.group(1) in columns_to_keep:
                             new_lines.append(line)
                         elif column_name_match and column_name_match.group(1) not in columns_to_keep:
@@ -298,7 +336,8 @@ if __name__ == "__main__":
                 tradable_fnncl_liab DOUBLE COMMENT '交易性金融负债', 
                 treasury_stock DOUBLE COMMENT '库存股', 
                 undstrbtd_profit DOUBLE COMMENT '未分配利润', 
-                PRIMARY KEY (date, instrument, report_date)
+                PRIMARY KEY ("date", "instrument", "report_date")
+                FOREIGN KEY(instrument) REFERENCES basic_info_CN_STOCK_A (instrument)
             )DEFAULT CHARSET=utf8mb4 COMMENT='资产负债表' ENGINE=InnoDB COLLATE utf8mb4_unicode_ci''',
         '''CREATE TABLE basic_info_CN_STOCK_A (
                 instrument VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '证券代码', 

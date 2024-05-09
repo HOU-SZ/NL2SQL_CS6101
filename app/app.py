@@ -2,6 +2,7 @@ import json
 import sys
 from flask import Flask, request
 from langchain.sql_database import SQLDatabase
+from sqlalchemy.orm import sessionmaker
 import argparse
 import os
 from core.service import run_generation_mac, run_genration_din
@@ -68,6 +69,28 @@ for table in tables:
     print(f"table_info: {cur_table_info}")  # 输出建表语句以及3条数据示例
 print("length of table_info: ", len(table_info))
 
+# 获取db column context
+Session = sessionmaker(bind=db_tool._engine)
+session = Session()
+
+column_values_dict = {}
+# logger.info(f'datasource.name is {datasource.name}')
+
+for table in db_tool._metadata.sorted_tables:
+    print(table)
+    for k, v in table._columns.items():
+        if str(v.type).startswith("VARCHAR"):
+            distinct_names = [str(name[0]) for name in session.query(
+                v).distinct().all() if name[0]]
+            column_name = str(v).split(".")[1]
+            if column_name not in column_values_dict:
+                column_values_dict[column_name] = distinct_names
+            else:
+                column_values_dict[column_name] += list(
+                    set(distinct_names) - set(column_values_dict[column_name]))
+
+print("column_values_dict: ", column_values_dict)
+
 
 model_dict = {
     "gpt-3.5-turbo": GPT,
@@ -115,10 +138,18 @@ def predict():
                 question, db_name, db_description, tables, table_info, llm, db_tool)
         else:
             sql_query = run_generation_mac(
-                question, db_name, db_description, db_type, tables, table_info, llm)
+                question, db_name, db_description, db_type, tables, table_info, column_values_dict, llm)
 
     except Exception as e:
         print("Error: ", e)
+        with open("records.json", "a", encoding='UTF-8') as f:
+            record = {
+                "count": count,
+                "db": db_name,
+                "question": question,
+                "sql_query": str(e)
+            }
+            f.write(json.dumps(record, ensure_ascii=False) + "\n")
         return {
             "success": False,
             "message": [str(e)]

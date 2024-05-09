@@ -1,5 +1,6 @@
 import os
 import openai
+from tenacity import retry, stop_after_attempt, wait_random_exponential
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 import modelscope
@@ -60,7 +61,7 @@ class sqlcoder:
             "text-generation",
             model=self.model,
             tokenizer=self.tokenizer,
-            max_new_tokens=512,
+            max_new_tokens=1024,
             do_sample=False,
             return_full_text=False,
             num_beams=1,
@@ -111,7 +112,7 @@ class GPT:
             n=1,
             stream=False,
             temperature=0.0,
-            max_tokens=512,
+            max_tokens=1024,
             top_p=1.0,
             frequency_penalty=0.0,
             presence_penalty=0.0,
@@ -146,7 +147,7 @@ class DeepSeek:
         inputs = self.tokenizer.apply_chat_template(
             messages, add_generation_prompt=True, return_tensors="pt").to(self.model.device)
         # tokenizer.eos_token_id is the id of <|EOT|> token
-        outputs = self.model.generate(inputs, max_new_tokens=512, do_sample=False,
+        outputs = self.model.generate(inputs, max_new_tokens=1024, do_sample=False,
                                       top_k=5, num_return_sequences=1, eos_token_id=self.tokenizer.eos_token_id)
         # print(self.tokenizer.decode(outputs[0][len(inputs[0]):], skip_special_tokens=True))
         return self.tokenizer.decode(outputs[0][len(inputs[0]):], skip_special_tokens=True)
@@ -158,6 +159,13 @@ class modelhub_deepseek_coder_33b_instruct:
         self.client = openai.OpenAI(api_key="9ea3d7417a2e4115a18c7048cb0c216f",
                                     base_url="http://modelhub.4pd.io/learnware/models/openai/4pd/api/v1")
 
+    @retry(  # use retry to avoid service temporarily unavailable
+        stop=stop_after_attempt(3),
+        wait=wait_random_exponential(min=60, max=120),
+        before_sleep=lambda retry_state: print(
+            f"Retry attempt {retry_state.attempt_number}, because {retry_state.outcome.exception() if retry_state.outcome else 'no exception raised'}"
+        ),
+    )
     def generate(self, prompt):
         response = self.client.chat.completions.create(
             model="public/deepseek-coder-33b-instruct@main",
@@ -169,12 +177,19 @@ class modelhub_deepseek_coder_33b_instruct:
         )
         return response.choices[0].message.content
 
+    @retry(  # use retry to avoid service temporarily unavailable
+        stop=stop_after_attempt(3),
+        wait=wait_random_exponential(min=60, max=120),
+        before_sleep=lambda retry_state: print(
+            f"Retry attempt {retry_state.attempt_number}, because {retry_state.outcome.exception() if retry_state.outcome else 'no exception raised'}"
+        ),
+    )
     def debug(self, prompt):
         response = self.client.chat.completions.create(
             model="public/deepseek-coder-33b-instruct@main",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.0,
-            max_tokens=512,
+            max_tokens=1024,
             top_p=1.0,
             stop=None
         )
@@ -187,6 +202,13 @@ class modelhub_qwen1_5_72b_chat:
         self.client = openai.OpenAI(api_key="9ea3d7417a2e4115a18c7048cb0c216f",
                                     base_url="http://modelhub.4pd.io/learnware/models/openai/4pd/api/v1")
 
+    @retry(  # use retry to avoid service temporarily unavailable
+        stop=stop_after_attempt(3),
+        wait=wait_random_exponential(min=60, max=120),
+        before_sleep=lambda retry_state: print(
+            f"Retry attempt {retry_state.attempt_number}, because {retry_state.outcome.exception() if retry_state.outcome else 'no exception raised'}"
+        ),
+    )
     def generate(self, prompt):
         response = self.client.chat.completions.create(
             model="public/qwen1-5-72b-chat@main",
@@ -198,12 +220,19 @@ class modelhub_qwen1_5_72b_chat:
         )
         return response.choices[0].message.content
 
+    @retry(  # use retry to avoid service temporarily unavailable
+        stop=stop_after_attempt(3),
+        wait=wait_random_exponential(min=60, max=120),
+        before_sleep=lambda retry_state: print(
+            f"Retry attempt {retry_state.attempt_number}, because {retry_state.outcome.exception() if retry_state.outcome else 'no exception raised'}"
+        ),
+    )
     def debug(self, prompt):
         response = self.client.chat.completions.create(
             model="public/qwen1-5-72b-chat@main",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.0,
-            max_tokens=512,
+            max_tokens=1024,
             top_p=1.0,
             stop=None
         )

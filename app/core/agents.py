@@ -9,7 +9,7 @@ from core.llm import modelhub_qwen1_5_72b_chat, GPT
 from core.utils import parse_json, parse_sql_from_string, get_create_table_sqls, get_table_data, extract_foreign_keys
 from core.tools.filter_schema_and_fk import apply_dictionary
 from core.tools.extract_comments import extract_comments
-from core.tools.get_table_and_columns import get_table_and_columns_by_similarity
+from core.tools.get_table_and_columns import get_table_and_columns_by_fuzzy_similarity, get_table_and_columns_by_similarity
 from sentence_transformers import SentenceTransformer
 
 
@@ -51,6 +51,20 @@ class FieldExtractor(BaseAgent):
         end = reply.find("]")
         reply = reply[start+1:end]
         fields = re.findall(r"[\w]+", reply)
+        # If the target fields includes 公司名称, please also add 股票代码 and 证券代码 to the target fields.
+        if '公司名称' in fields:
+            if '股票代码' not in fields:
+                fields.append('股票代码')
+            if '证券代码' not in fields:
+                fields.append('证券代码')
+        # If the target fields includes 股票代码, please also add 证券代码 to the target fields.
+        if '股票代码' in fields:
+            if '证券代码' not in fields:
+                fields.append('证券代码')
+        # If the target fields includes 证券代码, please also add 股票代码 to the target fields.
+        if '证券代码' in fields:
+            if '股票代码' not in fields:
+                fields.append('股票代码')
         print("fields: \n", fields)
         message['fields'] = fields
         message['send_to'] = SELECTOR_NAME
@@ -92,9 +106,11 @@ class Selector(BaseAgent):
         print("extracted_schema_dict: \n", extracted_schema_dict)
         # supplement the schema with the extracted fileds from the question
         comments, comments_list = extract_comments(create_table_sqls)
-        embedder = SentenceTransformer('./sbert-base-chinese-nli')
-        results, selected_tables_and_columns = get_table_and_columns_by_similarity(
-            embedder, message['fields'], comments_list)
+        # embedder = SentenceTransformer('./sbert-base-chinese-nli')
+        # results, selected_tables_and_columns = get_table_and_columns_by_similarity(
+        #     embedder, message['fields'], comments_list)
+        results, selected_tables_and_columns = get_table_and_columns_by_fuzzy_similarity(
+            message['fields'], comments_list)
         print("table_and_columns: \n", selected_tables_and_columns)
         if selected_tables_and_columns is None or len(selected_tables_and_columns) == 0:
             print(
@@ -254,7 +270,7 @@ class Refiner(BaseAgent):
         while "  " in SQL:
             SQL = SQL.replace("  ", " ")
         SQL = SQL.strip()
-        if SQL[:-1] != ";":
+        if SQL[-1] != ";":
             SQL += ";"  # add a semicolon at the end
         print("SQL after self-correction:", SQL)
         message['final_sql'] = SQL

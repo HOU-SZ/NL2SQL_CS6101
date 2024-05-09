@@ -208,7 +208,9 @@ When generating SQL, we should always consider constraints:
 - Use `LIMIT` to restrict the number of rows returned when necessary
 - Use `AS` to give an alias to the table name or column name or subquery
 - Pelase make sure the selected columns are existing in the corresponding tables.
+- Please use the original Chinese company_name and company_province in the SQL query, rather than translating them into English.
 - Please make sure the generated SQL is compatible with the {db_type} database.
+- Please only select the necessary tables and columns in the SQL query. For example, if the question is "哪家公司最早成立", you only need to select the company_name column. If the question is "比亚迪是在什么时候在主板上市的", you need to select the list_date column.
 
 ==========
 
@@ -392,7 +394,7 @@ refiner_template_din = """
 7) Use GROUP BY on one column only.
 8) Use LIMIT to restrict the number of rows returned when necessary
 9) If the given SQL query is None, return correct SQL query.
-10) Return the fixed SQL query only (without any additional explanation).
+10) Return the fixed SQL query only (WITHOUT ANY EXPLANATION).
 11) If selected columns in the {db_type} SQL QUERY are not existed in the corresponding tables, please replace the column names with the correct column names in the FIXED SQL QUERY.
 
 【Database schema】
@@ -405,12 +407,13 @@ refiner_template_din = """
 {sql}
 
 ## Attention:
-1) If the given SQL query is None, generate the correct SQL query and return it (without any explanation).
-2) If the given SQL query is correct, return it as is (without any explanation).
+1) If the given SQL query is None, generate the correct SQL query and return it (WITHOUT ANY EXPLANATION).
+2) If the given SQL query is correct, return it as is (WITHOUT ANY EXPLANATION!!!).
 3) If selected columns in the {db_type} SQL QUERY are not existed in the corresponding tables, please replace the column names with the correct column names in the FIXED SQL QUERY.
-4) Return the fixed SQL query only (without any explanation).
+4) Return the fixed SQL query only (WITHOUT ANY EXPLANATION).
 5) Please follow the SQL format to return the fixed SQL query.
 6) Please make sure the generated SQL is compatible with the {db_type} database.
+7) Please only select the necessary tables and columns in the SQL query. For example, if the question is "哪家公司最早成立", you only need to select the company_name column. If the question is "比亚迪是在什么时候在主板上市的", you need to select the list_date column.
 
 【Fixed SQL Query】
 """
@@ -431,7 +434,7 @@ Target fields: [固定资产, 在建工程, 总资产, 公司名称, 报告日�
 Question: 请列出2022年应付手续费及佣金占总负债比例最高的五家公司？
 Target fields: [应付手续费及佣金, 总负债, 公司名称, 报告日期]
 
-Question: 同享科技2023年归属于母公司所有者的净利润年增长率（YoY）是多少？
+Question: 同享科技2023年归属于母公司所有者的净利润年增长率是多少？
 Target fields: [归属于母公司所有者的净利润, 公司名称, 报告日期]
 
 Question: 2023第一季度上港集团的营业总收入环比增长率是多少？
@@ -454,6 +457,9 @@ Target fields: [股票代码, 退市日期]
 
 Question: 请找出所有在北京成立的公司的股票代码和公司名称。
 Target fields: [公司名称, 公司省份, 股票代码]
+
+Question: 过去五年中，哪家公司的预收款项与应付账款比率最高？
+Target fields: [预收款项, 应付账款, 公司名称, 报告日期]
 
 /* Please extract the target fields from the following question */
 Question: {question}

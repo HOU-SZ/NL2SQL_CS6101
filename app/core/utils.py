@@ -138,6 +138,9 @@ def parse_sql_from_string(input_string):
         else:
             input_string_list = input_string.split(":")
             if len(input_string_list) > 1:
-                return input_string_list[-1].strip()
+                sql = input_string_list[-1].strip()
+                sql = sql.replace("```sql", "")
+                sql = sql.replace("```", "")
+                return sql
             else:
                 return "error: No SQL found in the input string"

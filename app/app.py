@@ -88,7 +88,10 @@ for table in db_tool._metadata.sorted_tables:
             else:
                 column_values_dict[column_name] += list(
                     set(distinct_names) - set(column_values_dict[column_name]))
-
+remove_list = ['nan', 'None']
+for key in column_values_dict:
+    column_values_dict[key] = [
+        x for x in column_values_dict[key] if x not in remove_list]
 print("column_values_dict: ", column_values_dict)
 
 

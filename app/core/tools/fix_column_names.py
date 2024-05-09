@@ -10,10 +10,15 @@ def fix_sql(sql, column_values_dict):
         # 检查该列是否在字典中，并且该值是否不在字典中对应列的取值列表中
         if column.strip() in column_values_dict and value.strip() not in column_values_dict[column.strip()]:
             # 寻找字典中对应列的取值列表中最相似的值
-            closest_value = find_closest_value(
+            closest_value, success = find_closest_value(
                 value.strip(), column_values_dict[column.strip()])
             # 替换SQL语句中该列的值为最相似的值
-            sql = re.sub(rf'\b{re.escape(value)}\b', closest_value, sql)
+            if success:
+                sql = re.sub(rf'\b{re.escape(value)}\b', closest_value, sql)
+            else:
+                if column.strip() == "company_name":
+                    sql = sql.replace("company_name =", "name =")
+                    sql = sql.replace("company_name in", "name in")
 
     return sql
 
@@ -21,11 +26,13 @@ def fix_sql(sql, column_values_dict):
 def find_closest_value(value, value_list):
     # 计算每个取值和目标值的相似度，并返回最相似的值
     closest_value = min(value_list, key=lambda x: similarity(value, x))
-    return closest_value
+    if closest_value == "nan" or closest_value == "None":
+        return value, False
+    return closest_value, True
 
 
 def similarity(s1, s2):
-    # 计算两个字符串的相似度
+    # 计算两个字符串的相似度（编辑距离）
     m = len(s1)
     n = len(s2)
     dp = [[0] * (n + 1) for _ in range(m + 1)]
@@ -61,9 +68,20 @@ column_values_dict = {
 sql = "SELECT T1.instrument, T1.financing_expenses > T2.financing_expenses AS higher_financing_expenses FROM ( SELECT T1.instrument, SUM(T2.financing_expenses) AS financing_expenses FROM basic_info_CN_STOCK_A AS T1 INNER JOIN income_CN_STOCK_A AS T2 ON T1.instrument = T2.instrument WHERE T1.company_name = '长虹能源' AND YEAR(T2.report_date) = 2022 GROUP BY T1.instrument ) AS T1 INNER JOIN ( SELECT T1.instrument, SUM(T2.financing_expenses) AS financing_expenses FROM basic_info_CN_STOCK_A AS T1 INNER JOIN income_CN_STOCK_A AS T2 ON T1.instrument = T2.instrument WHERE T1.company_name = '同享科技' AND YEAR(T2.report_date) = 2022 GROUP BY T1.instrument ) AS T2 WHERE T1.instrument = '长虹能源' AND T2.instrument = '同享科技';"
 # 输入的字典
 column_values_dict = {
-    "company_name": ["格力电器股份有限公司", "比亚迪股份有限公司", "平安银行股份有限公司", "华夏银行股份有限公司", "中国平安股份有限公司", "长虹能源股份有限公司", "同享科技股份有限公司"],
-    "company_province": ["北京市", "上海市", "广东省"]
+    "company_name": ['nan', 'None', "格力电器股份有限公司", "比亚迪股份有限公司", "平安银行股份有限公司", "华夏银行股份有限公司", "中国平安股份有限公司", "长虹能源股份有限公司", "同享科技股份有限公司"],
+    "company_province": ['None', "北京市", "上海市", "广东省"]
 }
+
+# sql = "SELECT company_name, list_date FROM basic_info_CN_STOCK_A WHERE company_province = '广东省' AND YEAR(list_date) > 2000;"
+# column_values_dict = {
+#     "company_name": ['nan', 'None', "格力电器股份有限公司", "比亚迪股份有限公司", "平安银行股份有限公司", "华夏银行股份有限公司", "中国平安股份有限公司", "长虹能源股份有限公司", "同享科技股份有限公司"],
+#     "company_province": ['None', "北京市", "上海市", "广东省"]
+# }
+# remove_list = ['nan', 'None']
+# for key in column_values_dict:
+#     column_values_dict[key] = [
+#         x for x in column_values_dict[key] if x not in remove_list]
+# print(column_values_dict)
 
 # 调用函数修正SQL语句
 fixed_sql = fix_sql(sql, column_values_dict)

@@ -229,10 +229,16 @@ class Refiner(BaseAgent):
         if message['send_to'] != self.name:
             return
         self._message = message
+        foreign_keys_str = str()
+        for table, fks in message["modified_foreign_keys"].items():
+            foreign_keys_str += f"{table}: {fks}\n"
+        if foreign_keys_str == "":
+            foreign_keys_str = None
         prompt = ""
         if self.use_din_refiner:
             prompt = refiner_template_din.format(
-                db_type=self._message['db_type'], desc_str=self._message['create_table_sqls'], fk_str=self._message['foreign_keys_str'], query=self._message['question'], sql=message['generated_SQL'])
+                db_type=self._message['db_type'], desc_str="".join(
+                    message["modified_sql_commands"]), fk_str=foreign_keys_str, query=self._message['question'], sql=message['generated_SQL'])
         else:
             print("Not implemented yet")
             return None

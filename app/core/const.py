@@ -211,6 +211,10 @@ When generating SQL, we should always consider constraints:
 - Please use the original Chinese company_name and company_province in the SQL query, rather than translating them into English.
 - Please make sure the generated SQL is compatible with the {db_type} database.
 - Please only select the necessary tables and columns in the SQL query. For example, if the question is "哪家公司最早成立", you only need to select the company_name column. If the question is "比亚迪是在什么时候在主板上市的", you need to select the list_date column.
+- If the question is asking for a value or statistic of the value, please return the sum or difference according to the question. For example, if the question is "2022年格力电器的筹资活动现金流出小计是多少？", you need to return the sum of the corresponding column: SELECT SUM(sub_total_of_cos_from_fa) FROM cash_flow_CN_STOCK_A"}
+- If the question is asking for a value at a specific year, please use the date column to filter the data. For example, if the question is "2022年格力电器的现金流量表中的经营活动现金流量净额是多少？", you need to add the date filter in the WHERE clause: WHERE report_date BETWEEN '2022-01-01' AND '2022-12-31'
+- A example: If the question is "2022年华夏银行的筹资活动现金流入小计是多少？", you need to return the sum value of the corresponding column at 2022: SELECT sub_total_of_ci_from_fa FROM cash_flow_CN_STOCK_A JOIN basic_info_CN_STOCK_A ON cash_flow_CN_STOCK_A.instrument = basic_info_CN_STOCK_A.instrument WHERE date BETWEEN '2022-01-01' AND '2022-12-31' AND basic_info_CN_STOCK_A.company_name = '华夏银行股份有限公司';
+- If the question is asking for a comparison between two companies, please make sure to compare or order the corresponding value and return target company_name. For example, if the question is "2022年华夏银行和格力电器哪家公司的支付其他与经营活动有关的现金更多？", you need to return the company_name: SELECT T2.company_name FROM cash_flow_CN_STOCK_A AS T1 INNER JOIN basic_info_CN_STOCK_A AS T2 ON T1.instrument = T2.instrument WHERE (T2.company_name = '华夏银行股份有限公司' OR T2.company_name = '珠海格力电器股份有限公司') AND YEAR(T1.report_date) = 2022 ORDER BY T1.other_cash_paid_related_to_oa DESC LIMIT 1;
 
 ==========
 
@@ -396,6 +400,10 @@ refiner_template_din = """
 9) If the given SQL query is None, return correct SQL query.
 10) Return the fixed SQL query only (WITHOUT ANY EXPLANATION).
 11) If selected columns in the {db_type} SQL QUERY are not existed in the corresponding tables, please replace the column names with the correct column names in the FIXED SQL QUERY.
+12) If the question is asking for a value or statistic of the value, please return the sum or difference according to the question. For example, if the question is "2022年格力电器的筹资活动现金流出小计是多少？", you need to return the sum of the corresponding column: SELECT SUM(sub_total_of_cos_from_fa) FROM cash_flow_CN_STOCK_A"}
+13) If the question is asking for a value at a specific year, please use the date column to filter the data. For example, if the question is "2022年格力电器的现金流量表中的经营活动现金流量净额是多少？", you need to add the date filter in the WHERE clause: WHERE report_date BETWEEN '2022-01-01' AND '2022-12-31'
+14) A example: If the question is "2022年华夏银行的筹资活动现金流入小计是多少？", you need to return the sum value of the corresponding column at 2022: SELECT sub_total_of_ci_from_fa FROM cash_flow_CN_STOCK_A JOIN basic_info_CN_STOCK_A ON cash_flow_CN_STOCK_A.instrument = basic_info_CN_STOCK_A.instrument WHERE date BETWEEN '2022-01-01' AND '2022-12-31' AND basic_info_CN_STOCK_A.company_name = '华夏银行股份有限公司';
+15) If the question is asking for a comparison between two companies, please make sure to compare or order the corresponding value and return target company_name. For example, if the question is "2022年华夏银行和格力电器哪家公司的支付其他与经营活动有关的现金更多？", you need to return the company_name: SELECT T2.company_name FROM cash_flow_CN_STOCK_A AS T1 INNER JOIN basic_info_CN_STOCK_A AS T2 ON T1.instrument = T2.instrument WHERE (T2.company_name = '华夏银行股份有限公司' OR T2.company_name = '珠海格力电器股份有限公司') AND YEAR(T1.report_date) = 2022 ORDER BY T1.other_cash_paid_related_to_oa DESC LIMIT 1;
 
 【Database schema】
 {desc_str}
@@ -414,6 +422,10 @@ refiner_template_din = """
 5) Please follow the SQL format to return the fixed SQL query.
 6) Please make sure the generated SQL is compatible with the {db_type} database.
 7) Please only select the necessary tables and columns in the SQL query. For example, if the question is "哪家公司最早成立", you only need to select the company_name column. If the question is "比亚迪是在什么时候在主板上市的", you need to select the list_date column.
+8) If the question is asking for a value or statistic of the value, please return the sum or difference according to the question. For example, if the question is "2022年格力电器的筹资活动现金流出小计是多少？", you need to return the sum of the corresponding column: SELECT SUM(sub_total_of_cos_from_fa) FROM cash_flow_CN_STOCK_A"}
+9) If the question is asking for a value at a specific year, please use the date column to filter the data. For example, if the question is "2022年格力电器的现金流量表中的经营活动现金流量净额是多少？", you need to add the date filter in the WHERE clause: WHERE report_date BETWEEN '2022-01-01' AND '2022-12-31'
+10) A example: If the question is "2022年华夏银行的筹资活动现金流入小计是多少？", you need to return the sum value of the corresponding column at 2022: SELECT sub_total_of_ci_from_fa FROM cash_flow_CN_STOCK_A JOIN basic_info_CN_STOCK_A ON cash_flow_CN_STOCK_A.instrument = basic_info_CN_STOCK_A.instrument WHERE date BETWEEN '2022-01-01' AND '2022-12-31' AND basic_info_CN_STOCK_A.company_name = '华夏银行股份有限公司';
+11) If the question is asking for a comparison between two companies, please make sure to compare or order the corresponding value and return target company_name. For example, if the question is "2022年华夏银行和格力电器哪家公司的支付其他与经营活动有关的现金更多？", you need to return the company_name: SELECT T2.company_name FROM cash_flow_CN_STOCK_A AS T1 INNER JOIN basic_info_CN_STOCK_A AS T2 ON T1.instrument = T2.instrument WHERE (T2.company_name = '华夏银行股份有限公司' OR T2.company_name = '珠海格力电器股份有限公司') AND YEAR(T1.report_date) = 2022 ORDER BY T1.other_cash_paid_related_to_oa DESC LIMIT 1;
 
 【Fixed SQL Query】
 """

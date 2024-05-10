@@ -167,7 +167,7 @@ def predict():
             "sql_query": sql_query
         }
         f.write(json.dumps(record, ensure_ascii=False) + "\n")
-    if count % 10 == 0:
+    if count % 10 == 9:
         # print the records every 10 requests
         with open("records.json", "r", encoding='UTF-8') as f:
             records = f.readlines()

@@ -6,6 +6,7 @@ def apply_dictionary(sql_commands, foreign_keys, dictionary):
     droped_tables = []
     droped_table_columns = {}
 
+    # TODO优化：每张表至少保留主键外键信息
     for sql_command in sql_commands:
         sql_command.replace("\t", "")
         sql_command.strip()

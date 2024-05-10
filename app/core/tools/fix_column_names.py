@@ -17,10 +17,6 @@ def fix_sql(sql, column_values_dict):
             # 替换SQL语句中该列的值为最相似的值
             if success:
                 sql = re.sub(rf'\b{re.escape(value)}\b', closest_value, sql)
-            else:
-                if column.strip() == "company_name":
-                    sql = sql.replace("company_name =", "name =")
-                    sql = sql.replace("company_name IN", "name IN")
 
     return sql
 

@@ -51,20 +51,22 @@ class FieldExtractor(BaseAgent):
         end = reply.find("]")
         reply = reply[start+1:end]
         fields = re.findall(r"[\w]+", reply)
+        # 如果能够从database schema中获取到foreign key信息，那么不需要下面的处理。下面的处理只是为了在没有foreign key信息的情况下，尽量提高JOIN的准确性。
+        # 优化完apply_dictionary之后，不再需要下面的处理
         # If the target fields includes 公司名称, please also add 股票代码 and 证券代码 to the target fields.
-        if '公司名称' in fields:
-            if '股票代码' not in fields:
-                fields.append('股票代码')
-            if '证券代码' not in fields:
-                fields.append('证券代码')
-        # If the target fields includes 股票代码, please also add 证券代码 to the target fields.
-        if '股票代码' in fields:
-            if '证券代码' not in fields:
-                fields.append('证券代码')
-        # If the target fields includes 证券代码, please also add 股票代码 to the target fields.
-        if '证券代码' in fields:
-            if '股票代码' not in fields:
-                fields.append('股票代码')
+        # if '公司名称' in fields:
+        #     if '股票代码' not in fields:
+        #         fields.append('股票代码')
+        #     if '证券代码' not in fields:
+        #         fields.append('证券代码')
+        # # If the target fields includes 股票代码, please also add 证券代码 to the target fields.
+        # if '股票代码' in fields:
+        #     if '证券代码' not in fields:
+        #         fields.append('证券代码')
+        # # If the target fields includes 证券代码, please also add 股票代码 to the target fields.
+        # if '证券代码' in fields:
+        #     if '股票代码' not in fields:
+        #         fields.append('股票代码')
         print("fields: \n", fields)
         message['fields'] = fields
         message['send_to'] = SELECTOR_NAME
@@ -106,9 +108,12 @@ class Selector(BaseAgent):
         print("extracted_schema_dict: \n", extracted_schema_dict)
         # supplement the schema with the extracted fileds from the question
         comments, comments_list = extract_comments(create_table_sqls)
+        # get the table and columns by similarity (SentenceTransformer)
         # embedder = SentenceTransformer('./sbert-base-chinese-nli')
         # results, selected_tables_and_columns = get_table_and_columns_by_similarity(
         #     embedder, message['fields'], comments_list)
+
+        # get the table and columns by fuzzy similarity
         results, selected_tables_and_columns = get_table_and_columns_by_fuzzy_similarity(
             message['fields'], comments_list)
         print("table_and_columns: \n", selected_tables_and_columns)

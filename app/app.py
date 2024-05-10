@@ -57,8 +57,6 @@ print(f"database type: {db_type}")  # 输出mysql
 
 # 获取数据库中的所有表名
 tables = db_tool.get_table_names()
-# print("type of tables: ", type(tables))
-# print("length of tables: ", len(tables))
 print(f"tables: {tables}")  # 输出['t1', 't2', 't3']
 
 # 获取table info
@@ -69,12 +67,11 @@ for table in tables:
     print(f"table_info: {cur_table_info}")  # 输出建表语句以及3条数据示例
 print("length of table_info: ", len(table_info))
 
-# 获取db column context
+# 获取db column context (column and corresponding distinct values)
 Session = sessionmaker(bind=db_tool._engine)
 session = Session()
 
 column_values_dict = {}
-# logger.info(f'datasource.name is {datasource.name}')
 
 for table in db_tool._metadata.sorted_tables:
     print(table)

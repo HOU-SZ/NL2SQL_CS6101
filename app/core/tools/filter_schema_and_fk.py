@@ -146,7 +146,7 @@ def apply_dictionary(sql_commands, foreign_keys, dictionary):
     #                 r'\n\s*\n', '\n', modified_sql_commands[table_name])
     #             modified_sql_commands[table_name] = re.sub(
     #                 r',\s*,', ',', modified_sql_commands[table_name])
-    # return modified_sql_commands.values(), foreign_keys
+    return modified_sql_commands.values(), foreign_keys
 
 
 if __name__ == "__main__":

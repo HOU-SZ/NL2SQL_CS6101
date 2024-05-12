@@ -2,6 +2,7 @@ import abc
 import re
 import sqlite3
 import time
+import random
 
 import openai
 from core.const import SELECTOR_NAME, DECOMPOSER_NAME, REFINER_NAME, FIELD_EXTRACTOR_NAME, SYSTEM_NAME, selector_template, decompose_template_spider, decompose_template_bird, refiner_template, refiner_template_din, field_extractor_template, new_field_extractor_template, new_decompose_template
@@ -202,12 +203,22 @@ class Decomposer(BaseAgent):
             if type(columns) == str and columns == "keep_all":
                 for key in self.table_column_values_dict.keys():
                     if key.startswith(table):
-                        example_values[key] = self.table_column_values_dict[key]
+                        len_values = len(self.table_column_values_dict[key])
+                        if len_values < 10:
+                            example_values[key] = self.table_column_values_dict[key]
+                        else:
+                            example_values[key] = random.sample(
+                                self.table_column_values_dict[key], 10)
             else:
                 for column in columns:
                     table_column = f"{table}.{column}"
                     if table_column in self.table_column_values_dict:
-                        example_values[table_column] = self.table_column_values_dict[table_column]
+                        len_values = len(self.table_column_values_dict[key])
+                        if len_values < 10:
+                            example_values[key] = self.table_column_values_dict[key]
+                        else:
+                            example_values[key] = random.sample(
+                                self.table_column_values_dict[key], 10)
         prompt = new_decompose_template.format(
             db_type=self._message['db_type'], desc_str="".join(message["modified_sql_commands"]), fk_str=foreign_keys_str, query=self._message['question'], example_values=example_values)
 

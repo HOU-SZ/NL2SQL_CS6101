@@ -21,10 +21,12 @@ class ChatManager(object):
         self.chat_group = [
             FieldExtractor(db_name, db_description,
                            tables, table_info, self.llm),
-            Selector(db_name, db_description, tables, table_info, self.llm),
+            Selector(db_name, db_description, tables, table_info,
+                     table_column_values_dict, self.llm),
             Decomposer(db_name, db_description, tables,
                        table_info, table_column_values_dict, self.llm, prompt_type),
-            Refiner(db_name, db_description, tables, table_info, self.llm)
+            Refiner(db_name, db_description, tables, table_info,
+                    table_column_values_dict, self.llm)
         ]
 
     def _chat_single_round(self, message: dict):

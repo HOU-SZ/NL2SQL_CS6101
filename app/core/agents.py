@@ -81,12 +81,13 @@ class Selector(BaseAgent):
     name = SELECTOR_NAME
     description = "Get database description and if need, extract relative tables & columns"
 
-    def __init__(self, db_name, db_description, tables, table_info, llm):
+    def __init__(self, db_name, db_description, tables, table_info, table_column_values_dict, llm):
         super().__init__()
         self.db_name = db_name
         self.db_description = db_description
         self.tables = tables
         self.table_info = table_info
+        self.table_column_values_dict = table_column_values_dict
         self.llm = llm
         self._message = {}
 
@@ -101,13 +102,21 @@ class Selector(BaseAgent):
             foreign_keys_str += f"{table}: {fks}\n"
         if foreign_keys_str == "":
             foreign_keys_str = None
+        example_values_str = "{\n"
+        for key, value in self.table_column_values_dict.items():
+            example_values_str += f"    '{key}': {json.dumps(value, ensure_ascii=False)},\n"
+        # Remove the last comma and newline
+        example_values_str = example_values_str[:-2]
+        example_values_str += "\n}"
         prompt = selector_template.format(db_id=self.db_name, desc_str="".join(
-            create_table_sqls), fk_str=foreign_keys_str, query=self._message['question'], evidence=None)
+            create_table_sqls), fk_str=foreign_keys_str, query=self._message['question'], example_values=example_values_str)
         # print("prompt: \n", prompt)
         reply = self.llm.generate(prompt)
         print("Selector reply: \n", reply)
         extracted_schema_dict = parse_json(reply)
         print("extracted_schema_dict: \n", extracted_schema_dict)
+        # supplement the schema with the VARCHAR, TEXT, CHAR and DATE columns
+
         # supplement the schema with the extracted fileds from the question
         comments, comments_list = extract_comments(create_table_sqls)
         # get the table and columns by similarity (SentenceTransformer)
@@ -266,12 +275,13 @@ class Refiner(BaseAgent):
     name = REFINER_NAME
     description = "Execute SQL and preform validation"
 
-    def __init__(self, db_name, db_description, tables, table_info, llm):
+    def __init__(self, db_name, db_description, tables, table_info, table_column_values_dict, llm):
         super().__init__()
         self.db_name = db_name
         self.db_description = db_description
         self.tables = tables
         self.table_info = table_info
+        self.table_column_values_dict = table_column_values_dict
         self.llm = llm
         self.use_din_refiner = True
         self._message = {}
@@ -291,11 +301,17 @@ class Refiner(BaseAgent):
             foreign_keys_str += f"{table}: {fks}\n"
         if foreign_keys_str == "":
             foreign_keys_str = None
+        example_values_str = "{\n"
+        for key, value in self.table_column_values_dict.items():
+            example_values_str += f"    '{key}': {json.dumps(value, ensure_ascii=False)},\n"
+        # Remove the last comma and newline
+        example_values_str = example_values_str[:-2]
+        example_values_str += "\n}"
         prompt = ""
         if self.use_din_refiner:
             prompt = refiner_template_din.format(
                 db_type=self._message['db_type'], desc_str="".join(
-                    message["modified_sql_commands"]), fk_str=foreign_keys_str, query=self._message['question'], sql=message['generated_SQL'])
+                    message["modified_sql_commands"]), fk_str=foreign_keys_str, example_values=example_values_str, query=self._message['question'], sql=message['generated_SQL'])
         else:
             print("Not implemented yet")
             return None

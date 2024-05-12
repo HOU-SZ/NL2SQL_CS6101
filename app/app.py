@@ -108,7 +108,7 @@ table_column_values_dict = {}
 for table in db_tool._metadata.sorted_tables:
     columns = []
     for k, v in table._columns.items():
-        if str(v.type).startswith("VARCHAR") or str(v.type).startswith("TEXT") or str(v.type).startswith("CHAR"):
+        if str(v.type).startswith("VARCHAR") or str(v.type).startswith("TEXT") or str(v.type).startswith("CHAR") or str(v.type).startswith("DATE"):
             columns.append(str(v).split(".")[1])
     columns_str = ", ".join(columns)
     if db_type == "mysql":

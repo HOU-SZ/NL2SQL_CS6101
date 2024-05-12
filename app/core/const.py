@@ -75,8 +75,20 @@ account: ['account.district_id = district.district_id']
 loan: ['loan.account_id = account.account_id']
 【Question】
 What is the gender of the youngest client who opened account in the lowest average salary branch?
-【Evidence】
-Later birthdate refers to younger age; A11 refers to average salary
+【Example values】
+{{
+    'account.account_id': [1, 2, 3, 4, 5],
+    'account.district_id': [1, 2, 3, 4, 5],
+    'account.frequency': ['monthly', 'monthly', 'monthly', 'monthly', 'monthly'],
+    'account.date': [2020-01-01, 2020-01-01, 2020-01-01, 2020-01-01, 2020-01-01],
+    'client.client_id': [1, 2, 3, 4, 5],
+    'client.gender': ['M', 'F', 'M', 'F', 'M'],
+    'client.birth_date': [1990-01-01, 1995-01-01, 1992-01-01, 1998-01-01, 1991-01-01],
+    'client.district_id': [1, 2, 3, 4, 5],
+    'loan.loan_id': [1, 2, 3, 4, 5],
+    'loan.account_id': [1, 2, 3, 4, 5],
+    'district.district_id': [1, 2, 3, 4, 5],
+}}
 【Relevant tables and columns in JSON fromat】
 ```json
 {{
@@ -99,8 +111,8 @@ Here is a new example, please start answering:
 {fk_str}
 【Question】
 {query}
-【Evidence】
-{evidence}
+【Example values】
+{example_values}
 【Relevant tables and columns in JSON fromat】
 """
 
@@ -427,6 +439,8 @@ refiner_template_din = """
 {desc_str}
 【Foreign keys】
 {fk_str}
+【Example values】
+{example_values}
 【Question】
 {query}
 【{db_type} SQL Query】

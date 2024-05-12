@@ -197,6 +197,7 @@ class Decomposer(BaseAgent):
         # build example values
         example_values = {}
         extracted_schema_dict = message['extracted_schema_dict']
+        # method 1: select 10 random values for each column
         for table, columns in extracted_schema_dict.items():
             if type(columns) == str and columns == "drop_all":
                 continue
@@ -204,7 +205,7 @@ class Decomposer(BaseAgent):
                 for key in self.table_column_values_dict.keys():
                     if key.startswith(table):
                         len_values = len(self.table_column_values_dict[key])
-                        if len_values < 10:
+                        if len_values <= 10:
                             example_values[key] = self.table_column_values_dict[key]
                         else:
                             example_values[key] = random.sample(
@@ -214,11 +215,19 @@ class Decomposer(BaseAgent):
                     key = f"{table}.{column}"
                     if key in self.table_column_values_dict:
                         len_values = len(self.table_column_values_dict[key])
-                        if len_values < 10:
+                        if len_values <= 10:
                             example_values[key] = self.table_column_values_dict[key]
                         else:
                             example_values[key] = random.sample(
                                 self.table_column_values_dict[key], 10)
+
+        # method 2: select 10 random rows for each table, and use the values of the selected rows as example values
+        # for table, columns in extracted_schema_dict.items():
+        #     if type(columns) == str and columns == "drop_all":
+        #         continue
+        #     SQL_command = "SELECT * FROM " + table + " ORDER BY RANDOM() LIMIT 10;"
+        #     conn = sqlite3.connect(self.db_name)
+        print("example_values: \n", example_values)
         prompt = new_decompose_template.format(
             db_type=self._message['db_type'], desc_str="".join(message["modified_sql_commands"]), fk_str=foreign_keys_str, query=self._message['question'], example_values=example_values)
 

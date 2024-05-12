@@ -5,6 +5,7 @@ from langchain.sql_database import SQLDatabase
 from sqlalchemy.orm import sessionmaker
 import argparse
 import os
+import ast
 from core.service import run_generation_mac, run_genration_din
 from core.llm import sqlcoder, GPT, DeepSeek, modelhub_deepseek_coder_33b_instruct, modelhub_qwen1_5_72b_chat
 from multiprocessing import Value
@@ -101,6 +102,21 @@ for key in table_column_values_dict:
         x for x in table_column_values_dict[key] if x not in remove_list]
 print("column_values_dict: ", column_values_dict)
 # print("table_column_values_dict: ", table_column_values_dict)
+
+# select 10 random rows for each table, and use the values of the selected rows as example values
+table_column_values_dict = {}
+for table in tables:
+    columns = [str(v) for k, v in table_info[table].items()]
+    SQL_command = "SELECT * FROM " + table + " ORDER BY RANDOM() LIMIT 10;"
+    results = db_tool.run(SQL_command)
+    results_list = ast.literal_eval(results)
+    for i, column in enumerate(columns):
+        key = table + "." + column
+        if key not in table_column_values_dict:
+            table_column_values_dict[key] = []
+        for result in results_list:
+            table_column_values_dict[key].append(result[i])
+print("table_column_values_dict: ", table_column_values_dict)
 
 
 model_dict = {

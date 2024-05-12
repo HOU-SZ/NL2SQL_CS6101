@@ -563,12 +563,12 @@ CREATE TABLE satscores (
 frpm: ['frpm.CDSCode=satscores.cds']
 
 【Example values】
-{
+{{
     'frpm.CDSCode': ['01000000000000', '01000000000001', '01000000000002', '01000000000003', '01000000000004'],
     'frpm.Charter School (Y/N)': [0, 1, 0, 1, 0],
     'frpm.Enrollment (Ages 5-17)': [100, 200, 300, 400, 500],
     'frpm.Free Meal Count (Ages 5-17)': [10, 20, 30, 40, 50],
-}
+}}
 
 【Question】
 List school names of charter schools with an SAT excellence rate over the average.
@@ -635,13 +635,13 @@ client: ['client.district_id = district.district_id']
 account: ['account.district_id = district.district_id']
 
 【Example values】
-{
+{{
     'account.account_id': [1, 2, 3, 4, 5],
     'account.district_id': [1, 2, 3, 4, 5],
     'account.frequency': ['monthly', 'monthly', 'monthly', 'monthly', 'monthly'],
     'account.date': [2020-01-01, 2020-01-01, 2020-01-01, 2020-01-01, 2020-01-01],
     'client.client_id': [1, 2, 3, 4, 5],
-}
+}}
 
 【Question】
 What is the gender of the youngest client who opened account in the lowest average salary branch?
@@ -699,6 +699,45 @@ Decompose the question into sub questions, based on the given 【Database schema
 
 """
 
+# desc_str = """
+# CREATE TABLE balance_sheet_CN_STOCK_A (
+# 	instrument VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '股票代码',
+# 	report_date DATE NOT NULL COMMENT '报告期',
+# 	charge_and_commi_payable DOUBLE COMMENT '应付手续费及佣金',
+# 	contract_liab DOUBLE COMMENT '合同负债',
+# 	estimated_liab DOUBLE COMMENT '预计负债',
+# 	lease_libilities DOUBLE COMMENT '租赁负债',
+# 	total_current_liab DOUBLE COMMENT '流动负债合计',
+# 	total_liab DOUBLE COMMENT '负债合计',
+# )COMMENT='资产负债表' DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE=InnoDB
+# CREATE TABLE basic_info_CN_STOCK_A (
+# 	instrument VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '证券代码',
+# 	company_name VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_general_ci COMMENT '公司名称',
+#     name VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_general_ci COMMENT '证券名称',
+# )COMMENT='A股股票基本信息' DEFAULT CHARSET=utf8mb3 ENGINE=InnoDB
+# CREATE TABLE cash_flow_CN_STOCK_A (
+# 	report_date DATE COMMENT '报告期',
+# )COMMENT='现金流量表' DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE=InnoDB
+# CREATE TABLE income_CN_STOCK_A (
+# 	date DATE COMMENT '日期',
+# 	report_date DATE COMMENT '报告期',
+# 	charge_and_commi_expenses DOUBLE COMMENT '手续费及佣金支出',
+# 	fee_and_commi_income DOUBLE COMMENT '手续费及佣金收入',
+# )COMMENT='利润表' DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE=InnoDB
+# """
+# fk_str = ""
+# example_values = """
+# {
+#     'basic_info_CN_STOCK_A.instrument': ['002089.SZA', '002543.SZA', '300081.SZ', '688056.SHA', '603887.SHA', '830946.BJA', '832786.BJA', '000787.SZA'],
+#     'basic_info_CN_STOCK_A.company_name': ["珠海格力电器股份有限公司", "比亚迪股份有限公司", "平安银行股份有限公司", "华夏银行股份有限公司", "中国平安股份有限公司", "四川长虹新能源科技股份有限公司", "同享(苏州)电子材料科技股份有限公司", "东华能源股份有限公司", "同兴环保科技股份有限公司"],
+#     'basic_info_CN_STOCK_A.name': ['平安银行', '格力电器', '比亚迪', '长虹能源', '华夏银行', '中国平安', '同享科技', '东华能源', '同兴环保'],
+# }"""
+# query = "2022年工商银行的现金等价物的期末余额是多少？"
+
+# prompt = new_decompose_template.format(
+#     db_type='mysql', desc_str=desc_str, fk_str=fk_str, example_values=example_values, query=query)
+# print(prompt)
+
 new_decompose_template_example = """
 Given a 【Database schema】 description,【Example values】 and the 【Question】, you need to use valid mysql and understand the database and knowledge, and then decompose the question into subquestions for text-to-SQL generation.
 When generating SQL, we should always consider constraints:
@@ -718,18 +757,18 @@ When generating SQL, we should always consider constraints:
 
 【Database schema】
 CREATE TABLE frpm (
-    CDSCode VARCHAR(50) PRIMARY KEY, COMMENT CDSCode
-    Charter School (Y/N), COMMENT 0: N;. 1: Y
-    Enrollment (Ages 5-17) FLOAT, COMMENT Enrollment (Ages 5-17)
+    CDSCode VARCHAR(50) PRIMARY KEY COMMENT CDSCode
+    Charter School (Y/N) COMMENT 0: N; 1: Y
+    Enrollment (Ages 5-17) FLOAT COMMENT Enrollment (Ages 5-17)
     Free Meal Count (Ages 5-17) FLOAT COMMENT Free Meal Count (Ages 5-17)
     FOREIGN KEY (CDSCode) REFERENCES satscores(cds)
 );
 
 CREATE TABLE satscores (
-    cds VARCHAR(50) PRIMARY KEY, COMMENT California Department Schools
-    sname VARCHAR(50), COMMENT school name
-    NumTstTakr INT, COMMENT number of test takers in each school
-    AvgScrMath INT, COMMENT average scores in Math
+    cds VARCHAR(50) PRIMARY KEY COMMENT California Department Schools
+    sname VARCHAR(50) COMMENT school name
+    NumTstTakr INT COMMENT number of test takers in each school
+    AvgScrMath INT COMMENT average scores in Math
     NumGE1500 INT COMMENT Number of Test Takers Whose Total SAT Scores Are Greater or Equal to 1500
 );
 
@@ -783,25 +822,25 @@ Question Solved.
 
 【Database schema】
 CREATE TABLE account (
-    account_id INT PRIMARY KEY, COMMENT the id of the account
-    district_id INT, COMMENT location of branch
-    frequency VARCHAR(50), COMMENT frequency of the acount
+    account_id INT PRIMARY KEY COMMENT the id of the account
+    district_id INT COMMENT location of branch
+    frequency VARCHAR(50) COMMENT frequency of the acount
     date DATE COMMENT the creation date of the account
     FOREIGN KEY (district_id) REFERENCES district(district_id)
 );
 
 CREATE TABLE client (
-    client_id INT PRIMARY KEY, COMMENT the unique number
-    gender CHAR(1), COMMENT gender. F: female . M: male
-    birth_date DATE, COMMENT birth date
+    client_id INT PRIMARY KEY COMMENT the unique number
+    gender CHAR(1) COMMENT gender. F: female . M: male
+    birth_date DATE COMMENT birth date
     district_id INT COMMENT location of branch
     FOREIGN KEY (district_id) REFERENCES district(district_id)
 );
 
 CREATE TABLE district (
-    district_id INT PRIMARY KEY, COMMENT location of branch
-    A4 INT, COMMENT number of inhabitants
-    A11 INT, COMMENT average salary
+    district_id INT PRIMARY KEY COMMENT location of branch
+    A4 INT COMMENT number of inhabitants
+    A11 INT COMMENT average salary
 );
 
 【Foreign keys】
@@ -888,8 +927,8 @@ None
 【Example values】
 {
     'basic_info_CN_STOCK_A.instrument': ['002089.SZA', '002543.SZA', '300081.SZ', '688056.SHA', '603887.SHA', '830946.BJA', '832786.BJA', '000787.SZA'],
-    'basic_info_CN_STOCK_A.company_name': ["九号有限公司", "珠海格力电器股份有限公司", "比亚迪股份有限公司", "平安银行股份有限公司", "华夏银行股份有限公司", "中国平安股份有限公司", "四川长虹新能源科技股份有限公司", "同享(苏州)电子材料科技股份有限公司", "东华能源股份有限公司", "同兴环保科技股份有限公司"],
-    'basic_info_CN_STOCK_A.name': ['平安银行', '格力电器', '比亚迪', '长虹能源', '华夏银行', '中国平安', '长虹新能源', '同享科技', '东华能源', '同兴环保'],
+    'basic_info_CN_STOCK_A.company_name': ["珠海格力电器股份有限公司", "比亚迪股份有限公司", "平安银行股份有限公司", "华夏银行股份有限公司", "中国平安股份有限公司", "四川长虹新能源科技股份有限公司", "同享(苏州)电子材料科技股份有限公司", "东华能源股份有限公司", "同兴环保科技股份有限公司"],
+    'basic_info_CN_STOCK_A.name': ['平安银行', '格力电器', '比亚迪', '长虹能源', '华夏银行', '中国平安', '同享科技', '东华能源', '同兴环保'],
 }
 
 【Question】

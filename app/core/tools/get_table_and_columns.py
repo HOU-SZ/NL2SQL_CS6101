@@ -40,7 +40,7 @@ def get_table_and_columns_by_similarity(embedder: SentenceTransformer, fields: l
                     embedder, list(comment.keys())[0], field)
                 selected_comments.append(comment)
                 selected_tables_and_columns.append(list(comment.values())[0])
-            elif top_similarity - calculate_similarity(embedder, list(comment.keys())[0], field) < 0.05:
+            elif top_similarity - calculate_similarity(embedder, list(comment.keys())[0], field) < 0.02:
                 selected_comments.append(comment)
                 selected_tables_and_columns.append(list(comment.values())[0])
         results.append({field: selected_comments})
@@ -67,7 +67,7 @@ def get_table_and_columns_by_fuzzy_similarity(fields: list, comments_list: list)
                     list(comment.keys())[0], field)
                 selected_comments.append(comment)
                 selected_tables_and_columns.append(list(comment.values())[0])
-            elif top_similarity - fuzzy_similarity(list(comment.keys())[0], field) < 0.05:
+            elif top_similarity - fuzzy_similarity(list(comment.keys())[0], field) < 0.02:
                 selected_comments.append(comment)
                 selected_tables_and_columns.append(list(comment.values())[0])
         results.append({field: selected_comments})

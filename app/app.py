@@ -106,11 +106,16 @@ print("column_values_dict: ", column_values_dict)
 # select 10 random rows for each table, and use the values of the selected rows as example values
 table_column_values_dict = {}
 for table in db_tool._metadata.sorted_tables:
-    table_columns = [str(v) for k, v in table._columns.items()]
-    SQL_command = "SELECT * FROM " + table.name + " ORDER BY RANDOM() LIMIT 10;"
+    columns = []
+    for k, v in table._columns.items():
+        if str(v.type).startswith("VARCHAR") or str(v.type).startswith("TEXT") or str(v.type).startswith("CHAR"):
+            columns.append(str(v).split(".")[1])
+    columns_str = ", ".join(columns)
+    SQL_command = f"SELECT {columns_str} FROM {table.name} ORDER BY RANDOM() LIMIT 10;"
     results = db_tool.run(SQL_command)
     results_list = ast.literal_eval(results)
-    for i, key in enumerate(table_columns):
+    for i, column in enumerate(columns):
+        key = f"{table.name}.{column}"
         if key not in table_column_values_dict:
             table_column_values_dict[key] = []
         for result in results_list:

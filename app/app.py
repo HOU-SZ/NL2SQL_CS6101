@@ -111,7 +111,10 @@ for table in db_tool._metadata.sorted_tables:
         if str(v.type).startswith("VARCHAR") or str(v.type).startswith("TEXT") or str(v.type).startswith("CHAR"):
             columns.append(str(v).split(".")[1])
     columns_str = ", ".join(columns)
-    SQL_command = f"SELECT {columns_str} FROM {table.name} ORDER BY RANDOM() LIMIT 10;"
+    if db_type == "mysql":
+        SQL_command = f"SELECT {columns_str} FROM {table.name} ORDER BY RAND() LIMIT 10;"
+    else:
+        SQL_command = f"SELECT {columns_str} FROM {table.name} ORDER BY RANDOM() LIMIT 10;"
     results = db_tool.run(SQL_command)
     results_list = ast.literal_eval(results)
     for i, column in enumerate(columns):

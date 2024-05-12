@@ -230,7 +230,12 @@ class Decomposer(BaseAgent):
         #     conn = sqlite3.connect(self.db_name)
         print("example_values: \n", example_values)
         # convert example_values to json string
-        example_values_str = json.dumps(example_values, indent=4)
+        example_values_str = "{\n"
+        for key, value in example_values.items():
+            example_values_str += f"    '{key}': {json.dumps(value, ensure_ascii=False)},\n"
+        # Remove the last comma and newline
+        example_values_str = example_values_str[:-2]
+        example_values_str += "\n}"
 
         prompt = new_decompose_template.format(
             db_type=self._message['db_type'], desc_str="".join(message["modified_sql_commands"]), fk_str=foreign_keys_str, query=self._message['question'], example_values=example_values_str)

@@ -1,4 +1,5 @@
 import abc
+import json
 import re
 import sqlite3
 import time
@@ -228,8 +229,11 @@ class Decomposer(BaseAgent):
         #     SQL_command = "SELECT * FROM " + table + " ORDER BY RANDOM() LIMIT 10;"
         #     conn = sqlite3.connect(self.db_name)
         print("example_values: \n", example_values)
+        # convert example_values to json string
+        example_values_str = json.dumps(example_values, indent=4)
+
         prompt = new_decompose_template.format(
-            db_type=self._message['db_type'], desc_str="".join(message["modified_sql_commands"]), fk_str=foreign_keys_str, query=self._message['question'], example_values=example_values)
+            db_type=self._message['db_type'], desc_str="".join(message["modified_sql_commands"]), fk_str=foreign_keys_str, query=self._message['question'], example_values=example_values_str)
 
         print("prompt: \n", prompt)
         reply = self.llm.generate(prompt)

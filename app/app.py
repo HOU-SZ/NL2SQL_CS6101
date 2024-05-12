@@ -72,24 +72,35 @@ Session = sessionmaker(bind=db_tool._engine)
 session = Session()
 
 column_values_dict = {}
+table_column_values_dict = {}
 
 for table in db_tool._metadata.sorted_tables:
     print(table)
     for k, v in table._columns.items():
-        if str(v.type).startswith("VARCHAR"):
+        if str(v.type).startswith("VARCHAR") or str(v.type).startswith("TEXT") or str(v.type).startswith("CHAR"):
             distinct_names = [str(name[0]) for name in session.query(
                 v).distinct().all() if name[0]]
+            table_column_name = str(v)
             column_name = str(v).split(".")[1]
             if column_name not in column_values_dict:
                 column_values_dict[column_name] = distinct_names
             else:
                 column_values_dict[column_name] += list(
                     set(distinct_names) - set(column_values_dict[column_name]))
+            if table_column_name not in table_column_values_dict:
+                table_column_values_dict[table_column_name] = distinct_names
+            else:
+                table_column_values_dict[table_column_name] += list(
+                    set(distinct_names) - set(table_column_values_dict[table_column_name]))
 remove_list = ['nan', 'None']
 for key in column_values_dict:
     column_values_dict[key] = [
         x for x in column_values_dict[key] if x not in remove_list]
+for key in table_column_values_dict:
+    table_column_values_dict[key] = [
+        x for x in table_column_values_dict[key] if x not in remove_list]
 print("column_values_dict: ", column_values_dict)
+print("table_column_values_dict: ", table_column_values_dict)
 
 
 model_dict = {
@@ -138,7 +149,7 @@ def predict():
                 question, db_name, db_description, tables, table_info, llm, db_tool)
         else:
             sql_query = run_generation_mac(
-                question, db_name, db_description, db_type, tables, table_info, column_values_dict, llm)
+                question, db_name, db_description, db_type, tables, table_info, column_values_dict, table_column_values_dict, llm)
 
     except Exception as e:
         print("Error: ", e)

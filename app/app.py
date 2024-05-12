@@ -100,7 +100,7 @@ for key in table_column_values_dict:
     table_column_values_dict[key] = [
         x for x in table_column_values_dict[key] if x not in remove_list]
 print("column_values_dict: ", column_values_dict)
-print("table_column_values_dict: ", table_column_values_dict)
+# print("table_column_values_dict: ", table_column_values_dict)
 
 
 model_dict = {

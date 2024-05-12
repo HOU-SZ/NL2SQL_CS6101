@@ -211,8 +211,8 @@ class Decomposer(BaseAgent):
                                 self.table_column_values_dict[key], 10)
             else:
                 for column in columns:
-                    table_column = f"{table}.{column}"
-                    if table_column in self.table_column_values_dict:
+                    key = f"{table}.{column}"
+                    if key in self.table_column_values_dict:
                         len_values = len(self.table_column_values_dict[key])
                         if len_values < 10:
                             example_values[key] = self.table_column_values_dict[key]

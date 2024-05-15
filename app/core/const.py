@@ -85,7 +85,6 @@ COMMENTs: [学生姓名, 学生性别, 课程名称, 分数]
 /* Given the database schema and example values below */
 [database schema]
 {db_schema}
-
 [example values]
 {example_values}
 

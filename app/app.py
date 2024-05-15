@@ -126,12 +126,16 @@ for i in range(3):
     # select 6 random rows for each table, and use the values of the selected rows as example values
     table_column_values_dict_6 = {}
     for table in db_tool._metadata.sorted_tables:
+        columns_original = []
         columns = []
         for k, v in table._columns.items():
             if str(v.type).startswith("VARCHAR") or str(v.type).startswith("TEXT") or str(v.type).startswith("CHAR") or str(v.type).startswith("DATE"):
                 column_name = str(v).split(".")[1]
-                if str(v.type).startswith("DATE"):
+                columns_original.append(column_name)
+                if str(v.type).startswith("DATE") and db_type == "mysql":
                     column_name = f"DATE_FORMAT({column_name}, '%Y-%m-%d')"
+                elif str(v.type).startswith("DATE"):
+                    column_name = f"TO_CHAR({column_name}, 'YYYY-MM-DD')"
                 columns.append(column_name)
         columns_str = ", ".join(columns)
         if db_type == "mysql":
@@ -142,7 +146,7 @@ for i in range(3):
         results = db_tool.run(SQL_command)
         print("results: ", results)
         results_list = convert_string_to_list(str(results))
-        for i, column in enumerate(columns):
+        for i, column in enumerate(columns_original):
             key = f"{table.name}.{column}"
             if key not in table_column_values_dict_6:
                 table_column_values_dict_6[key] = []
@@ -163,7 +167,7 @@ for i in range(3):
         lines = question_reply.split("\n")
         questions_and_comments_str += lines[0] + "\n"
         questions_and_comments_str += lines[-1] + "\n\n"
-    print("questions_and_comments_str: ", questions_and_comments_str)
+    print("questions_and_comments_str: \n", questions_and_comments_str)
 
 
 @ app.route("/")

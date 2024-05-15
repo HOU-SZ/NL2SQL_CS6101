@@ -1,3 +1,4 @@
+import json
 import re
 import numpy as np
 # from core.utils import get_create_table_sqls
@@ -22,7 +23,7 @@ def get_create_table_sqls(tables, table_info):
         if cur_create_table_sql[0] == "\n":
             cur_create_table_sql = cur_create_table_sql[1:]
         create_table_sqls.append(cur_create_table_sql)
-    print("create_table_sqls: ", create_table_sqls)
+    # print("create_table_sqls: ", create_table_sqls)
     return create_table_sqls
 
 
@@ -95,7 +96,6 @@ def select_random_rows_from_create_table(sql_command):
             foreign_key_columns)
     print("columns_to_keep: ", columns_to_keep)
     lines = sql_command.split("\n")
-    print("len(lines): ", len(lines))
     if len(lines) <= 15:
         for line in lines[1:]:
             column_name_match = re.search(r'"(\w+)"', line)
@@ -103,6 +103,7 @@ def select_random_rows_from_create_table(sql_command):
                 column_name_match = re.search(r'(\w+)\s', line)
             if column_name_match:
                 columns_to_keep.add(column_name_match.group(1))
+        print("columns_to_keep: ", columns_to_keep)
         return sql_command, columns_to_keep
     new_lines = [lines[0]]  # Keep the CREATE TABLE line
     for line in lines[1:]:

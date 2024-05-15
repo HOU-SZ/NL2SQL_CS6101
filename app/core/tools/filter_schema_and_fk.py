@@ -25,7 +25,19 @@ def apply_dictionary(sql_commands, foreign_keys, dictionary):
                 if dictionary[table_name] == "keep_all":
                     modified_sql_commands[table_name] = sql_command
                 elif dictionary[table_name] == "drop_all":
-                    # Drop the table and its foreign keys
+                    # # method 1: Only keep the primary key and foreign key constraints and VARCHAR, TEXT, CHAR and DATE columns
+                    # lines = sql_command.split("\n")
+                    # new_lines = [lines[0]]  # Keep the CREATE TABLE line
+                    # for line in lines[1:]:
+                    #     if "PRIMARY KEY" in line or "FOREIGN KEY" in line or "VARCHAR" in line or "TEXT" in line or "CHAR" in line or "DATE" in line:
+                    #         new_lines.append(line)
+                    # # also keep the last line
+                    # if len(line.strip()) > 0 and line.strip()[0] == ")":
+                    #     new_lines.append(line)
+                    #     new_lines.append("\n")
+                    # modified_sql_commands[table_name] = "\n".join(new_lines)
+
+                    # method 2: Drop the table and its foreign keys
                     if table_name in foreign_keys:
                         del foreign_keys[table_name]
                     droped_tables.append(table_name)
@@ -82,6 +94,9 @@ def apply_dictionary(sql_commands, foreign_keys, dictionary):
                             new_lines.append(line)
                         elif "FOREIGN KEY" in line:
                             new_lines.append(line)
+                        # # keep the VARCHAR, TEXT, CHAR and DATE columns
+                        # elif "VARCHAR" in line or "TEXT" in line or "CHAR" in line or "DATE" in line:
+                        #     new_lines.append(line)
                         elif column_name_match and column_name_match.group(1) in columns_to_keep:
                             new_lines.append(line)
                         elif column_name_match and column_name_match.group(1) not in columns_to_keep:

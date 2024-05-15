@@ -6,7 +6,7 @@ import time
 import random
 
 import openai
-from core.const import SELECTOR_NAME, DECOMPOSER_NAME, REFINER_NAME, FIELD_EXTRACTOR_NAME, SYSTEM_NAME, selector_template, decompose_template_spider, decompose_template_bird, refiner_template, refiner_template_din, field_extractor_template, new_field_extractor_template, new_decompose_template
+from core.const import SELECTOR_NAME, DECOMPOSER_NAME, REFINER_NAME, FIELD_EXTRACTOR_NAME, SYSTEM_NAME, selector_template, refiner_template, refiner_template_din, field_extractor_template, new_field_extractor_template, new_decompose_template
 from core.llm import modelhub_qwen1_5_72b_chat, GPT
 from core.utils import parse_json, parse_sql_from_string, get_create_table_sqls, get_table_data, extract_foreign_keys
 from core.tools.filter_schema_and_fk import apply_dictionary
@@ -31,12 +31,14 @@ class FieldExtractor(BaseAgent):
     name = FIELD_EXTRACTOR_NAME
     description = "Extract fields from the question"
 
-    def __init__(self, db_name, db_description, tables, table_info, llm):
+    def __init__(self, db_name, db_description, tables, table_info, table_column_values_dict, questions_and_comments_str, llm):
         super().__init__()
         self.db_name = db_name
         self.db_description = db_description
         self.tables = tables
         self.table_info = table_info
+        self.table_column_values_dict = table_column_values_dict
+        self.questions_and_comments_str = questions_and_comments_str
         self.llm = modelhub_qwen1_5_72b_chat()
         self._message = {}
 
@@ -44,31 +46,19 @@ class FieldExtractor(BaseAgent):
         if message['send_to'] != self.name:
             return
         self._message = message
-        prompt = new_field_extractor_template.format(
-            question=self._message['question'])
-        # print("prompt: \n", prompt)
+
+        # prompt = new_field_extractor_template.format(
+        #     question=self._message['question'])
+        prompt = self.questions_and_comments_str + "问题: " + \
+            self._message['question'] + "\n" + "COMMENTS: "
+        print("prompt: \n", prompt)
         reply = self.llm.generate(prompt)
         print("FieldExtractor reply: \n", reply)
         start = reply.find("[")
         end = reply.find("]")
         reply = reply[start+1:end]
         fields = re.findall(r"[\w]+", reply)
-        # 如果能够从database schema中获取到foreign key信息，那么不需要下面的处理。下面的处理只是为了在没有foreign key信息的情况下，尽量提高JOIN的准确性。
-        # 优化完apply_dictionary之后，不再需要下面的处理
-        # If the target fields includes 公司名称, please also add 股票代码 and 证券代码 to the target fields.
-        # if '公司名称' in fields:
-        #     if '股票代码' not in fields:
-        #         fields.append('股票代码')
-        #     if '证券代码' not in fields:
-        #         fields.append('证券代码')
-        # # If the target fields includes 股票代码, please also add 证券代码 to the target fields.
-        # if '股票代码' in fields:
-        #     if '证券代码' not in fields:
-        #         fields.append('证券代码')
-        # # If the target fields includes 证券代码, please also add 股票代码 to the target fields.
-        # if '证券代码' in fields:
-        #     if '股票代码' not in fields:
-        #         fields.append('股票代码')
+
         print("fields: \n", fields)
         message['fields'] = fields
         message['send_to'] = SELECTOR_NAME
@@ -110,7 +100,7 @@ class Selector(BaseAgent):
         example_values_str += "\n}"
         prompt = selector_template.format(db_id=self.db_name, desc_str="".join(
             create_table_sqls), fk_str=foreign_keys_str, query=self._message['question'], example_values=example_values_str)
-        # print("prompt: \n", prompt)
+        print("prompt: \n", prompt)
         reply = self.llm.generate(prompt)
         print("Selector reply: \n", reply)
         extracted_schema_dict = parse_json(reply)
@@ -315,7 +305,7 @@ class Refiner(BaseAgent):
         else:
             print("Not implemented yet")
             return None
-        # print("prompt: \n", prompt)
+        print("prompt: \n", prompt)
         debugged_SQL = None
         while debugged_SQL is None:
             try:

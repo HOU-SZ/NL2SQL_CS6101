@@ -8,6 +8,9 @@ import os
 import ast
 from core.service import run_generation_mac, run_genration_din
 from core.llm import sqlcoder, GPT, DeepSeek, modelhub_deepseek_coder_33b_instruct, modelhub_qwen1_5_72b_chat
+from core.tools.string_tools import convert_string_to_list
+from core.tools.build_questions import build_questions
+from core.const import build_question_template
 from multiprocessing import Value
 
 counter = Value('i', -1)
@@ -23,6 +26,20 @@ args = parser.parse_args()
 model_name = args.model_name
 method = args.method
 print(f"model_name: {model_name}")
+
+model_dict = {
+    "gpt-3.5-turbo": GPT,
+    "sqlcoder-7b-2": sqlcoder,
+    "deepseek-coder-33b-instruct": DeepSeek,
+    "modelhub-deepseek-coder-33b-instruct": modelhub_deepseek_coder_33b_instruct,
+    "modelhub_qwen1_5_72b_chat": modelhub_qwen1_5_72b_chat
+}
+
+try:
+    llm = model_dict[model_name]()
+except Exception as e:
+    print("Error in starting llm: ", e)
+    sys.exit("Error in starting llm: ", e)
 
 
 for_submit = True
@@ -73,7 +90,7 @@ Session = sessionmaker(bind=db_tool._engine)
 session = Session()
 
 column_values_dict = {}
-table_column_values_dict = {}
+table_column_values_dict_full = {}
 
 for table in db_tool._metadata.sorted_tables:
     print(table)
@@ -88,57 +105,62 @@ for table in db_tool._metadata.sorted_tables:
             else:
                 column_values_dict[column_name] += list(
                     set(distinct_names) - set(column_values_dict[column_name]))
-            if table_column_name not in table_column_values_dict:
-                table_column_values_dict[table_column_name] = distinct_names
+            if table_column_name not in table_column_values_dict_full:
+                table_column_values_dict_full[table_column_name] = distinct_names
             else:
-                table_column_values_dict[table_column_name] += list(
-                    set(distinct_names) - set(table_column_values_dict[table_column_name]))
+                table_column_values_dict_full[table_column_name] += list(
+                    set(distinct_names) - set(table_column_values_dict_full[table_column_name]))
 remove_list = ['nan', 'None']
 for key in column_values_dict:
     column_values_dict[key] = [
         x for x in column_values_dict[key] if x not in remove_list]
-for key in table_column_values_dict:
-    table_column_values_dict[key] = [
-        x for x in table_column_values_dict[key] if x not in remove_list]
+for key in table_column_values_dict_full:
+    table_column_values_dict_full[key] = [
+        x for x in table_column_values_dict_full[key] if x not in remove_list]
 print("column_values_dict: ", column_values_dict)
 # print("table_column_values_dict: ", table_column_values_dict)
 
-# select 10 random rows for each table, and use the values of the selected rows as example values
-table_column_values_dict = {}
-for table in db_tool._metadata.sorted_tables:
-    columns = []
-    for k, v in table._columns.items():
-        if str(v.type).startswith("VARCHAR") or str(v.type).startswith("TEXT") or str(v.type).startswith("CHAR") or str(v.type).startswith("DATE"):
-            columns.append(str(v).split(".")[1])
-    columns_str = ", ".join(columns)
-    if db_type == "mysql":
-        SQL_command = f"SELECT {columns_str} FROM {table.name} ORDER BY RAND() LIMIT 10;"
-    else:
-        SQL_command = f"SELECT {columns_str} FROM {table.name} ORDER BY RANDOM() LIMIT 10;"
-    results = db_tool.run(SQL_command)
-    results_list = ast.literal_eval(results)
-    for i, column in enumerate(columns):
-        key = f"{table.name}.{column}"
-        if key not in table_column_values_dict:
-            table_column_values_dict[key] = []
-        for result in results_list:
-            table_column_values_dict[key].append(result[i])
-print("table_column_values_dict: ", table_column_values_dict)
+# get questions and comments for field extractor use
+questions_and_comments_str = ""
+for i in range(3):
+    # select 10 random rows for each table, and use the values of the selected rows as example values
+    table_column_values_dict_6 = {}
+    for table in db_tool._metadata.sorted_tables:
+        columns = []
+        for k, v in table._columns.items():
+            if str(v.type).startswith("VARCHAR") or str(v.type).startswith("TEXT") or str(v.type).startswith("CHAR") or str(v.type).startswith("DATE"):
+                columns.append(str(v).split(".")[1])
+        columns_str = ", ".join(columns)
+        if db_type == "mysql":
+            SQL_command = f"SELECT {columns_str} FROM {table.name} ORDER BY RAND() LIMIT 6;"
+        else:
+            # TODO: more database types
+            SQL_command = f"SELECT {columns_str} FROM {table.name} ORDER BY RANDOM() LIMIT 6;"
+        results = db_tool.run(SQL_command)
+        print("results: ", results)
+        results_list = convert_string_to_list(str(results))
+        for i, column in enumerate(columns):
+            key = f"{table.name}.{column}"
+            if key not in table_column_values_dict_6:
+                table_column_values_dict_6[key] = []
+            for result in results_list:
+                table_column_values_dict_6[key].append(result[i])
+    print("table_column_values_dict_6: ", table_column_values_dict_6)
 
-
-model_dict = {
-    "gpt-3.5-turbo": GPT,
-    "sqlcoder-7b-2": sqlcoder,
-    "deepseek-coder-33b-instruct": DeepSeek,
-    "modelhub-deepseek-coder-33b-instruct": modelhub_deepseek_coder_33b_instruct,
-    "modelhub_qwen1_5_72b_chat": modelhub_qwen1_5_72b_chat
-}
-
-try:
-    llm = model_dict[model_name]()
-except Exception as e:
-    print("Error in starting llm: ", e)
-    sys.exit("Error in starting llm: ", e)
+    # build questions from the database info
+    final_sql_commands_str, final_example_values_str = build_questions(
+        tables, table_info, table_column_values_dict_6)
+    build_question_prompt = build_question_template.format(
+        db_schema=final_sql_commands_str, example_values=final_example_values_str)
+    print("build_question_prompt: ", build_question_prompt)
+    build_question_reply = llm.generate(build_question_prompt)
+    print("build_question_reply: ", build_question_reply)
+    question_replys = build_question_reply.split("\n\n")
+    for question_reply in question_replys:
+        lines = question_reply.split("\n")
+        questions_and_comments_str += lines[0] + "\n"
+        questions_and_comments_str += lines[-1] + "\n\n"
+    print("questions_and_comments_str: ", questions_and_comments_str)
 
 
 @ app.route("/")
@@ -172,7 +194,7 @@ def predict():
                 question, db_name, db_description, tables, table_info, llm, db_tool)
         else:
             sql_query = run_generation_mac(
-                question, db_name, db_description, db_type, tables, table_info, column_values_dict, table_column_values_dict, llm)
+                question, db_name, db_description, db_type, tables, table_info, column_values_dict, table_column_values_dict_6, questions_and_comments_str, llm)
 
     except Exception as e:
         print("Error: ", e)

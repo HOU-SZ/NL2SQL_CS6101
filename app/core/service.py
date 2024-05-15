@@ -3,7 +3,7 @@ from core.chat_manager import ChatManager, ChatManager_DIN
 from core.const import SYSTEM_NAME
 
 
-def init_message(question, db_name, db_description, db_type, tables, table_info, table_column_values_dict):
+def init_message(question, db_name, db_description, db_type, tables, table_info, table_column_values_dict, questions_and_comments_str):
     user_message = {
         "send_to": SYSTEM_NAME,
         "question": question,
@@ -13,11 +13,12 @@ def init_message(question, db_name, db_description, db_type, tables, table_info,
         "tables": tables,
         "table_info": table_info,
         "table_column_values_dict": table_column_values_dict,
+        "questions_and_comments_str": questions_and_comments_str
     }
     return user_message
 
 
-def run_generation_mac(question, db_name, db_description, db_type, tables, table_info, column_values_dict, table_column_values_dict, llm):
+def run_generation_mac(question, db_name, db_description, db_type, tables, table_info, column_values_dict, table_column_values_dict, questions_and_comments_str, llm):
     print("Start generating SQL query...")
     print("Database name: ", db_name)
     print("Database description: ", db_description)
@@ -27,10 +28,10 @@ def run_generation_mac(question, db_name, db_description, db_type, tables, table
 
     prompt_type = "bird"
     chat_manager = ChatManager(
-        db_name, db_description, db_type, tables, table_info, table_column_values_dict, prompt_type, llm)
+        db_name, db_description, db_type, tables, table_info, table_column_values_dict, questions_and_comments_str, prompt_type, llm)
 
     user_message = init_message(
-        question, db_name, db_description, db_type, tables, table_info, table_column_values_dict)
+        question, db_name, db_description, db_type, tables, table_info, table_column_values_dict, questions_and_comments_str)
     user_message = chat_manager.start(user_message)
     SQL = user_message['final_sql']
     SQL = SQL.replace("\n", " ")

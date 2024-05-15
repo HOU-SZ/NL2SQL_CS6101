@@ -123,13 +123,16 @@ print("column_values_dict: ", column_values_dict)
 # get questions and comments for field extractor use
 questions_and_comments_str = ""
 for i in range(3):
-    # select 10 random rows for each table, and use the values of the selected rows as example values
+    # select 6 random rows for each table, and use the values of the selected rows as example values
     table_column_values_dict_6 = {}
     for table in db_tool._metadata.sorted_tables:
         columns = []
         for k, v in table._columns.items():
             if str(v.type).startswith("VARCHAR") or str(v.type).startswith("TEXT") or str(v.type).startswith("CHAR") or str(v.type).startswith("DATE"):
-                columns.append(str(v).split(".")[1])
+                column_name = str(v).split(".")[1]
+                if str(v.type).startswith("DATE"):
+                    column_name = f"DATE_FORMAT({column_name}, '%Y-%m-%d')"
+                columns.append(column_name)
         columns_str = ", ".join(columns)
         if db_type == "mysql":
             SQL_command = f"SELECT {columns_str} FROM {table.name} ORDER BY RAND() LIMIT 6;"

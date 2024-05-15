@@ -1,7 +1,16 @@
 import re
 import numpy as np
 # from core.utils import get_create_table_sqls
-from string_tools import convert_dict_to_string
+# from string_tools import convert_dict_to_string
+
+
+def convert_dict_to_string(input_dict):
+    output_string = "{\n"
+    for key, value in input_dict.items():
+        output_string += f"    '{key}': {json.dumps(value, ensure_ascii=False)},\n"
+    output_string = output_string[:-2]  # Remove the last comma and newline
+    output_string += "\n}"
+    return output_string
 
 
 def get_create_table_sqls(tables, table_info):

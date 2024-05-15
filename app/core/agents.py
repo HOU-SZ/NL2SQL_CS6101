@@ -6,7 +6,7 @@ import time
 import random
 
 import openai
-from core.const import SELECTOR_NAME, DECOMPOSER_NAME, REFINER_NAME, FIELD_EXTRACTOR_NAME, SYSTEM_NAME, selector_template, refiner_template, refiner_template_din, field_extractor_template, new_field_extractor_template, new_decompose_template
+from core.const import SELECTOR_NAME, DECOMPOSER_NAME, REFINER_NAME, FIELD_EXTRACTOR_NAME, SYSTEM_NAME, selector_template, refiner_template, refiner_template_din, new_decompose_template
 from core.llm import modelhub_qwen1_5_72b_chat, GPT
 from core.utils import parse_json, parse_sql_from_string, get_create_table_sqls, get_table_data, extract_foreign_keys
 from core.tools.filter_schema_and_fk import apply_dictionary

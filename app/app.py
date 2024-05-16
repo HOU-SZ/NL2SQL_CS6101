@@ -135,7 +135,7 @@ for i in range(3):
                 if str(v.type).startswith("DATE") and db_type == "mysql":
                     column_name = f"DATE_FORMAT({column_name}, '%Y-%m-%d')"
                 elif str(v.type).startswith("DATE"):
-                    column_name = f"TO_CHAR({column_name}, 'YYYY-MM-DD')"
+                    column_name = f"TO_CHAR({column_name}::DATE, 'YYYY-MM-DD')"
                 columns.append(column_name)
         columns_str = ", ".join(columns)
         if db_type == "mysql":
@@ -144,6 +144,7 @@ for i in range(3):
             # TODO: more database types
             SQL_command = f"SELECT {columns_str} FROM {table.name} ORDER BY RANDOM() LIMIT 6;"
         results = db_tool.run(SQL_command)
+        print("columns_original: ", columns_original)
         print("results: ", results)
         results_list = convert_string_to_list(str(results))
         for i, column in enumerate(columns_original):
@@ -151,7 +152,13 @@ for i in range(3):
             if key not in table_column_values_dict_6:
                 table_column_values_dict_6[key] = []
             for result in results_list:
-                table_column_values_dict_6[key].append(result[i])
+                print("result: ", result)
+                print("len of result: ", len(result))
+                print("len of columns_original: ", len(columns_original))
+                if i >= len(result):
+                    table_column_values_dict_6[key].append("None")
+                else:
+                    table_column_values_dict_6[key].append(result[i])
     print("table_column_values_dict_6: ", table_column_values_dict_6)
 
     # build questions from the database info

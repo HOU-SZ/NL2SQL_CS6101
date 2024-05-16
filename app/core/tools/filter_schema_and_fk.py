@@ -25,22 +25,24 @@ def apply_dictionary(sql_commands, foreign_keys, dictionary):
                 if dictionary[table_name] == "keep_all":
                     modified_sql_commands[table_name] = sql_command
                 elif dictionary[table_name] == "drop_all":
-                    # # method 1: Only keep the primary key and foreign key constraints and VARCHAR, TEXT, CHAR and DATE columns
-                    # lines = sql_command.split("\n")
-                    # new_lines = [lines[0]]  # Keep the CREATE TABLE line
-                    # for line in lines[1:]:
-                    #     if "PRIMARY KEY" in line or "FOREIGN KEY" in line or "VARCHAR" in line or "TEXT" in line or "CHAR" in line or "DATE" in line:
-                    #         new_lines.append(line)
-                    # # also keep the last line
-                    # if len(line.strip()) > 0 and line.strip()[0] == ")":
-                    #     new_lines.append(line)
-                    #     new_lines.append("\n")
-                    # modified_sql_commands[table_name] = "\n".join(new_lines)
+                    # method 1: Only keep the first three columns and primary key and foreign key constraints and VARCHAR, TEXT, CHAR and DATE columns
+                    lines = sql_command.split("\n")
+                    new_lines = [lines[0]]  # Keep the CREATE TABLE line
+                    for i, line in enumerate(lines[1:]):
+                        if i < 3:
+                            new_lines.append(line)
+                        elif "PRIMARY KEY" in line or "FOREIGN KEY" in line or "VARCHAR" in line or "TEXT" in line or "CHAR" in line or "DATE" in line:
+                            new_lines.append(line)
+                        # also keep the last line
+                        elif len(line.strip()) > 0 and line.strip()[0] == ")":
+                            new_lines.append(line)
+                            new_lines.append("\n")
+                    modified_sql_commands[table_name] = "\n".join(new_lines)
 
-                    # method 2: Drop the table and its foreign keys
-                    if table_name in foreign_keys:
-                        del foreign_keys[table_name]
-                    droped_tables.append(table_name)
+                    # # method 2: Drop the table and its foreign keys
+                    # if table_name in foreign_keys:
+                    #     del foreign_keys[table_name]
+                    # droped_tables.append(table_name)
                 elif isinstance(dictionary[table_name], list):
                     # Keep only specified columns
                     columns_to_keep = set(dictionary[table_name])

@@ -28,7 +28,7 @@ def run_generation_mac(question, db_name, db_description, db_type, tables, table
 
     prompt_type = "bird"
     chat_manager = ChatManager(
-        db_name, db_description, db_type, tables, table_info, table_column_values_dict, questions_and_comments_str, prompt_type, llm)
+        db_name, db_description, db_type, tables, table_info, table_column_values_dict, questions_and_comments_str, prompt_type, llm, db_tool)
 
     user_message = init_message(
         question, db_name, db_description, db_type, tables, table_info, table_column_values_dict, questions_and_comments_str)

@@ -4,9 +4,10 @@ from difflib import SequenceMatcher
 
 
 def fix_sql(sql, column_values_dict):
-    # 从SQL语句中提取列名和值
+    # 从SQL语句中提取列名和值(column_name=value)
     columns_and_values = re.findall(r'(\w+)\s*=\s*\'([^\']*)\'', sql)
 
+    # print(columns_and_values)
     # 对于每个列和对应的值
     for column, value in columns_and_values:
         # 检查该列是否在字典中，并且该值是否不在字典中对应列的取值列表中
@@ -18,6 +19,33 @@ def fix_sql(sql, column_values_dict):
             if success:
                 sql = re.sub(rf'\b{re.escape(value)}\b', closest_value, sql)
 
+    if len(columns_and_values) == 0:
+        # 从SQL语句中提取列名和值(column_name IN (value1, value2, ...))
+        columns_and_values = re.findall(
+            r'(\w+)\s*IN\s*\(([^)]*)\)', sql, re.IGNORECASE)
+    if len(columns_and_values) == 0:
+        # 从SQL语句中提取列名和值(column_name NOT IN (value1, value2, ...))
+        columns_and_values = re.findall(
+            r'(\w+)\s*NOT\s*IN\s*\(([^)]*)\)', sql, re.IGNORECASE)
+    # print(columns_and_values)
+    # 对于每个列和对应的值
+    for column, values in columns_and_values:
+        # 检查该列是否在字典中
+        if column.strip() in column_values_dict:
+            # 分割取值列表
+            value_list = [value.strip().replace("'", "").replace('"', "")
+                          for value in values.split(", ")]
+            # 对于每个取值
+            for value in value_list:
+                # 如果该值不在字典中对应列的取值列表中
+                if value.strip() not in column_values_dict[column.strip()]:
+                    # 寻找字典中对应列的取值列表中最相似的值
+                    closest_value, success = find_closest_value(
+                        value.strip(), column_values_dict[column.strip()])
+                    # 替换SQL语句中该列的值为最相似的值
+                    if success:
+                        sql = re.sub(rf'\b{re.escape(value)}\b',
+                                     closest_value, sql)
     return sql
 
 
@@ -63,6 +91,12 @@ if __name__ == "__main__":
     # 输入的字典
     column_values_dict = {
         "company_name": ["九号有限公司", "格力电器股份有限公司", "比亚迪股份有限公司", "平安银行股份有限公司", "中国石油化工股份有限公司", "中国石化齐鲁股份有限公司"],
+        "company_province": ["北京市", "上海市", "广东省"]
+    }
+
+    sql = "SELECT company_name, MAX(total_owner_equity) AS max_equity FROM balance_sheet_CN_STOCK_A bs JOIN basic_info_CN_STOCK_A bi ON bs.instrument = bi.instrument WHERE bi.company_name IN ('华夏银行', '民生银行') AND YEAR(bs.report_date) = 2022 GROUP BY company_name HAVING max_equity = ( SELECT MAX(total_owner_equity) FROM balance_sheet_CN_STOCK_A bs2 JOIN basic_info_CN_STOCK_A bi2 ON bs2.instrument = bi2.instrument WHERE bi2.company_name IN ('华夏银行', '民生银行') AND YEAR(bs2.report_date) = 2022 );"
+    column_values_dict = {
+        "company_name": ["九号有限公司", "格力电器股份有限公司", "比亚迪股份有限公司", "平安银行股份有限公司", "华夏银行股份有限公司", "民生银行股份有限公司", "中国平安股份有限公司", "四川长虹新能源科技股份有限公司", "同享(苏州)电子材料科技股份有限公司", "东华能源股份有限公司", "同兴环保科技股份有限公司"],
         "company_province": ["北京市", "上海市", "广东省"]
     }
     # # 输入的SQL语句

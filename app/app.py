@@ -208,7 +208,7 @@ def predict():
                 question, db_name, db_description, tables, table_info, llm, db_tool)
         else:
             sql_query = run_generation_mac(
-                question, db_name, db_description, db_type, tables, table_info, column_values_dict, table_column_values_dict_6, questions_and_comments_str, llm)
+                question, db_name, db_description, db_type, tables, table_info, column_values_dict, table_column_values_dict_6, questions_and_comments_str, llm, db_tool)
 
     except Exception as e:
         print("Error: ", e)
@@ -216,7 +216,6 @@ def predict():
             record = {
                 "count": count,
                 "db": db_name,
-                "question": question,
                 "sql_query": str(e)
             }
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
@@ -230,7 +229,6 @@ def predict():
         record = {
             "count": count,
             "db": db_name,
-            "question": question,
             "sql_query": sql_query
         }
         f.write(json.dumps(record, ensure_ascii=False) + "\n")

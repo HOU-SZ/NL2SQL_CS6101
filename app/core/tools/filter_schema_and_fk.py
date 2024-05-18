@@ -35,7 +35,7 @@ def apply_dictionary(sql_commands, foreign_keys, dictionary):
                             new_lines.append(line)
                         # also keep the last line
                         elif len(line.strip()) > 0 and line.strip()[0] == ")":
-                            new_lines.append(line)
+                            new_lines.append(line + "\n")
                             new_lines.append("\n")
                     modified_sql_commands[table_name] = "\n".join(new_lines)
 
@@ -109,7 +109,19 @@ def apply_dictionary(sql_commands, foreign_keys, dictionary):
                     modified_sql_commands[table_name] = "\n".join(
                         new_lines)
             else:
-                continue
+                # Only keep the first three columns and primary key and foreign key constraints and VARCHAR, TEXT, CHAR and DATE columns
+                lines = sql_command.split("\n")
+                new_lines = [lines[0]]  # Keep the CREATE TABLE line
+                for i, line in enumerate(lines[1:]):
+                    if i < 3:
+                        new_lines.append(line)
+                    elif "PRIMARY KEY" in line or "FOREIGN KEY" in line or "VARCHAR" in line or "TEXT" in line or "CHAR" in line or "DATE" in line:
+                        new_lines.append(line)
+                    # also keep the last line
+                    elif len(line.strip()) > 0 and line.strip()[0] == ")":
+                        new_lines.append(line)
+                        new_lines.append("\n")
+                modified_sql_commands[table_name] = "\n".join(new_lines)
                 # modified_sql_commands[table_name] = sql_command
     # # Remove foreign keys constraints referencing dropped tables (right of the "=" sign)
     # for table in droped_tables:

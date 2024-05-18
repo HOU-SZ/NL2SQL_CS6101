@@ -49,8 +49,9 @@ class FieldExtractor(BaseAgent):
 
         # prompt = new_field_extractor_template.format(
         #     question=self._message['question'])
-        prompt = self.questions_and_comments_str + "问题: " + \
-            self._message['question'] + "\n" + "COMMENTS: "
+        instruction = "Given the following question, you need to extract key fields as COMMENTs from the problem. The extracted COMMENTs will be used to match database tables and columns. The more COMMENTs you extract, the more accurate the resulting SQL statement will be. Please return the COMMENTs as a list. Note that only the COMMENTs are returned, not the specific values.\n\n/* Examples of some questions and COMMENTs */"
+        prompt = instruction + self.questions_and_comments_str + "问题: " + \
+            self._message['question'] + "\n" + "COMMENTs: "
         print("prompt: \n", prompt)
         reply = self.llm.generate(prompt)
         print("FieldExtractor reply: \n", reply)
@@ -265,7 +266,7 @@ class Refiner(BaseAgent):
     name = REFINER_NAME
     description = "Execute SQL and preform validation"
 
-    def __init__(self, db_name, db_description, tables, table_info, table_column_values_dict, llm):
+    def __init__(self, db_name, db_description, tables, table_info, table_column_values_dict, llm, db_tool):
         super().__init__()
         self.db_name = db_name
         self.db_description = db_description
@@ -273,6 +274,7 @@ class Refiner(BaseAgent):
         self.table_info = table_info
         self.table_column_values_dict = table_column_values_dict
         self.llm = llm
+        self.db_tool = db_tool
         self.use_din_refiner = True
         self._message = {}
 
@@ -281,6 +283,7 @@ class Refiner(BaseAgent):
         table_data = get_table_data(self.tables, self.table_info)
         conn = sqlite3.connect(self.db_name)
         c = conn.cursor()
+        print("Not implemented yet")
 
     def talk(self, message: dict):
         if message['send_to'] != self.name:
@@ -297,11 +300,20 @@ class Refiner(BaseAgent):
         # Remove the last comma and newline
         example_values_str = example_values_str[:-2]
         example_values_str += "\n}"
+
+        # run generated_SQL in the database to get the result
+        generated_SQL = message['generated_SQL']
+        db_result = self.db_tool.run(generated_SQL)
+
+        # has_error = False
+        # if "error" in db_result or "Error" in db_result or "ERROR" in db_result:
+        #     has_error = True
+
         prompt = ""
         if self.use_din_refiner:
             prompt = refiner_template_din.format(
                 db_type=self._message['db_type'], desc_str="".join(
-                    message["modified_sql_commands"]), fk_str=foreign_keys_str, example_values=example_values_str, query=self._message['question'], sql=message['generated_SQL'])
+                    message["modified_sql_commands"]), fk_str=foreign_keys_str, example_values=example_values_str, query=self._message['question'], sql=message['generated_SQL'], execution_result=str(db_result))
         else:
             print("Not implemented yet")
             return None

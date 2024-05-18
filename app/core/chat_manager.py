@@ -7,7 +7,7 @@ import time
 
 
 class ChatManager(object):
-    def __init__(self, db_name, db_description, db_type, tables, table_info, table_column_values_dict, questions_and_comments_str, prompt_type, llm):
+    def __init__(self, db_name, db_description, db_type, tables, table_info, table_column_values_dict, questions_and_comments_str, prompt_type, llm, db_tool):
         self.db_name = db_name
         self.db_description = db_description
         self.db_type = db_type
@@ -19,6 +19,7 @@ class ChatManager(object):
         # self.llm = GPT()
         # self.llm = DeepSeek()
         self.llm = llm
+        self.db_tool = db_tool
         self.chat_group = [
             FieldExtractor(db_name, db_description,
                            tables, table_info, table_column_values_dict, questions_and_comments_str, self.llm),
@@ -27,7 +28,7 @@ class ChatManager(object):
             Decomposer(db_name, db_description, tables,
                        table_info, table_column_values_dict, self.llm, prompt_type),
             Refiner(db_name, db_description, tables, table_info,
-                    table_column_values_dict, self.llm)
+                    table_column_values_dict, self.llm, db_tool)
         ]
 
     def _chat_single_round(self, message: dict):

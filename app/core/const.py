@@ -434,7 +434,7 @@ refiner_template_din = """
 14) If the question is asking for a value at a specific year, please use the date column to filter the date to the specific year: WHERE date BETWEEN '2022-01-01' AND '2022-12-31'
 15) If the question is asking for a comparison between two entities, please make sure to compare or order the corresponding value and return target entity_name: SELECT entity_name FROM table_name WHERE column_name = (SELECT MAX(column_name) FROM table_name)
 16) IMPORTANT: If a question asks what a numeric value is, there may be one or more matching rows in the database, return the sum of the values corresponding to those rows: SELECT SUM(column_name) FROM table_name
-17) IMPORTANT: If there are multiple rows in the 【Execution result】, please return the sum of the values corresponding to those rows: SELECT SUM(column_name) FROM table_name
+17) IMPORTANT: If there are multiple rows in the 【Execution result】, please fix the 【{db_type} SQL Query】 to  return the sum of the values corresponding to those rows: SELECT SUM(column_name) FROM table_name
 
 【Database schema】
 {desc_str}
@@ -461,7 +461,7 @@ refiner_template_din = """
 11) If the question is asking for a value at a specific year, please use the date column to filter the date to the specific year: WHERE date BETWEEN '2022-01-01' AND '2022-12-31'
 12) If the question is asking for a comparison between two entities, please make sure to compare or order the corresponding value and return target entity_name: SELECT entity_name FROM table_name WHERE column_name = (SELECT MAX(column_name) FROM table_name)
 13) IMPORTANT: If a question asks what a numeric value is, there may be one or more matching rows in the database, return the sum of the values corresponding to those rows: SELECT SUM(column_name) FROM table_name
-14) IMPORTANT: If there are multiple rows in the 【Execution result】, please return the sum of the values corresponding to those rows: SELECT SUM(column_name) FROM table_name
+14) IMPORTANT: If there are multiple rows in the 【Execution result】, please fix the 【{db_type} SQL Query】 to return the sum of the values corresponding to those rows: SELECT SUM(column_name) FROM table_name
 
 【Fixed SQL Query】
 """

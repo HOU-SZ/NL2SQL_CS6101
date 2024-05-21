@@ -7,12 +7,13 @@ import time
 
 
 class ChatManager(object):
-    def __init__(self, db_name, db_description, db_type, tables, table_info, table_column_values_dict, questions_and_comments_str, prompt_type, llm, db_tool):
+    def __init__(self, db_name, db_description, db_type, tables, table_info, column_values_dict, table_column_values_dict, questions_and_comments_str, prompt_type, llm, db_tool):
         self.db_name = db_name
         self.db_description = db_description
         self.db_type = db_type
         self.tables = tables
         self.table_info = table_info
+        self.column_values_dict = column_values_dict
         self.table_column_values_dict = table_column_values_dict
         self.questions_and_comments_str = questions_and_comments_str
         # self.llm = sqlcoder()
@@ -27,7 +28,7 @@ class ChatManager(object):
                      table_column_values_dict, self.llm),
             Decomposer(db_name, db_description, tables,
                        table_info, table_column_values_dict, self.llm, prompt_type),
-            Refiner(db_name, db_description, tables, table_info,
+            Refiner(db_name, db_description, tables, table_info, column_values_dict,
                     table_column_values_dict, self.llm, db_tool)
         ]
 

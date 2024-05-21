@@ -12,6 +12,7 @@ from core.utils import parse_json, parse_sql_from_string, get_create_table_sqls,
 from core.tools.filter_schema_and_fk import apply_dictionary
 from core.tools.extract_comments import extract_comments
 from core.tools.get_table_and_columns import get_table_and_columns_by_fuzzy_similarity, get_table_and_columns_by_similarity
+from core.tools.fix_column_names import fix_sql
 from sentence_transformers import SentenceTransformer
 
 
@@ -266,15 +267,17 @@ class Refiner(BaseAgent):
     name = REFINER_NAME
     description = "Execute SQL and preform validation"
 
-    def __init__(self, db_name, db_description, tables, table_info, table_column_values_dict, llm, db_tool):
+    def __init__(self, db_name, db_description, tables, table_info, column_values_dict, table_column_values_dict, llm, db_tool):
         super().__init__()
         self.db_name = db_name
         self.db_description = db_description
         self.tables = tables
         self.table_info = table_info
+        self.column_values_dict = column_values_dict
         self.table_column_values_dict = table_column_values_dict
         self.llm = llm
         self.db_tool = db_tool
+        self.retry_limit = 3
         self.use_din_refiner = True
         self._message = {}
 
@@ -285,51 +288,7 @@ class Refiner(BaseAgent):
         c = conn.cursor()
         print("Not implemented yet")
 
-    def talk(self, message: dict):
-        if message['send_to'] != self.name:
-            return
-        self._message = message
-        foreign_keys_str = str()
-        for table, fks in message["modified_foreign_keys"].items():
-            foreign_keys_str += f"{table}: {fks}\n"
-        if foreign_keys_str == "":
-            foreign_keys_str = None
-        example_values_str = "{\n"
-        for key, value in self.table_column_values_dict.items():
-            example_values_str += f"    '{key}': {json.dumps(value, ensure_ascii=False)},\n"
-        # Remove the last comma and newline
-        example_values_str = example_values_str[:-2]
-        example_values_str += "\n}"
-
-        # run generated_SQL in the database to get the result
-        generated_SQL = message['generated_SQL']
-        db_result = self.db_tool.run(generated_SQL)
-
-        # has_error = False
-        # if "error" in db_result or "Error" in db_result or "ERROR" in db_result:
-        #     has_error = True
-
-        prompt = ""
-        if self.use_din_refiner:
-            prompt = refiner_template_din.format(
-                db_type=self._message['db_type'], desc_str="".join(
-                    message["modified_sql_commands"]), fk_str=foreign_keys_str, example_values=example_values_str, query=self._message['question'], sql=message['generated_SQL'], execution_result=str(db_result))
-        else:
-            print("Not implemented yet")
-            return None
-        print("prompt: \n", prompt)
-        debugged_SQL = None
-        while debugged_SQL is None:
-            try:
-                debugged_SQL = self.llm.debug(prompt)
-            except openai.error.RateLimitError as error:
-                print(
-                    "===============Rate limit error for the classification module:", error)
-                time.sleep(15)
-            except Exception as error:
-                print("===============Error in the refiner module:", error)
-                pass
-        print("Refiner reply:", debugged_SQL)
+    def process_reply(self, debugged_SQL, message: dict):
         SQL = None
         if debugged_SQL[:6] == "SELECT" or debugged_SQL[:7] == " SELECT":
             SQL = debugged_SQL
@@ -353,6 +312,64 @@ class Refiner(BaseAgent):
         SQL = SQL.strip()
         if SQL[-1] != ";":
             SQL += ";"  # add a semicolon at the end
+        SQL = fix_sql(SQL, self.column_values_dict)
+
+    def talk(self, message: dict):
+        if message['send_to'] != self.name:
+            return
+        self._message = message
+        SQL = None
+        foreign_keys_str = str()
+        for table, fks in message["modified_foreign_keys"].items():
+            foreign_keys_str += f"{table}: {fks}\n"
+        if foreign_keys_str == "":
+            foreign_keys_str = None
+        example_values_str = "{\n"
+        for key, value in self.table_column_values_dict.items():
+            example_values_str += f"    '{key}': {json.dumps(value, ensure_ascii=False)},\n"
+        # Remove the last comma and newline
+        example_values_str = example_values_str[:-2]
+        example_values_str += "\n}"
+
+        # run generated_SQL in the database to get the result
+        generated_SQL = message['generated_SQL']
+        db_result = self.db_tool.run(generated_SQL)
+        has_error = True
+        retry_times = 0
+        while has_error and retry_times < self.retry_limit:
+            prompt = ""
+            if self.use_din_refiner:
+                prompt = refiner_template_din.format(
+                    db_type=self._message['db_type'], desc_str="".join(
+                        message["modified_sql_commands"]), fk_str=foreign_keys_str, example_values=example_values_str, query=self._message['question'], sql=generated_SQL, execution_result=str(db_result))
+            else:
+                print("Not implemented yet")
+                return None
+            print("prompt: \n", prompt)
+            debugged_SQL = None
+            while debugged_SQL is None:
+                try:
+                    debugged_SQL = self.llm.debug(prompt)
+                except openai.error.RateLimitError as error:
+                    print(
+                        "===============Rate limit error for the classification module:", error)
+                    time.sleep(15)
+                except Exception as error:
+                    print("===============Error in the refiner module:", error)
+                    pass
+            print("Refiner reply:", debugged_SQL)
+            SQL = self.process_reply(debugged_SQL, message)
+            generated_SQL = SQL
+            db_result = self.db_tool.run(generated_SQL)
+            if db_result is None or "error" in db_result or "Error" in db_result or "ERROR" in db_result:
+                has_error = True
+                retry_times += 1
+            else:
+                has_error = False
+        if SQL is None:
+            print("Failed to debug the SQL, fallback to the generated SQL")
+            SQL = message['generated_SQL']
+
         print("SQL after self-correction:", SQL)
         message['final_sql'] = SQL
         message['send_to'] = SYSTEM_NAME

@@ -18,7 +18,7 @@ def init_message(question, db_name, db_description, db_type, tables, table_info,
     return user_message
 
 
-def run_generation_mac(question, db_name, db_description, db_type, tables, table_info, column_values_dict, table_column_values_dict, questions_and_comments_str, llm):
+def run_generation_mac(question, db_name, db_description, db_type, tables, table_info, column_values_dict, table_column_values_dict, questions_and_comments_str, llm, db_tool):
     print("Start generating SQL query...")
     print("Database name: ", db_name)
     print("Database description: ", db_description)
@@ -28,7 +28,7 @@ def run_generation_mac(question, db_name, db_description, db_type, tables, table
 
     prompt_type = "bird"
     chat_manager = ChatManager(
-        db_name, db_description, db_type, tables, table_info, table_column_values_dict, questions_and_comments_str, prompt_type, llm, db_tool)
+        db_name, db_description, db_type, tables, table_info, column_values_dict, table_column_values_dict, questions_and_comments_str, prompt_type, llm, db_tool)
 
     user_message = init_message(
         question, db_name, db_description, db_type, tables, table_info, table_column_values_dict, questions_and_comments_str)
@@ -36,7 +36,7 @@ def run_generation_mac(question, db_name, db_description, db_type, tables, table
     SQL = user_message['final_sql']
     SQL = SQL.replace("\n", " ")
     SQL = SQL.replace("\t", " ")
-    SQL = fix_sql(SQL, column_values_dict)
+    # SQL = fix_sql(SQL, column_values_dict)
     return SQL
 
 

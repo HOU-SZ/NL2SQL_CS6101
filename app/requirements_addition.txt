@@ -10,3 +10,4 @@ pymysql==1.1.0
 cryptography==41.0.5
 clickhouse-sqlalchemy@https://nexus.4pd.io/repository/pypi-dev/packages/clickhouse-sqlalchemy/0.2.4/clickhouse-sqlalchemy-0.2.4.tar.gz
 psycopg2-binary==2.9.9
+tokencost==0.1.7

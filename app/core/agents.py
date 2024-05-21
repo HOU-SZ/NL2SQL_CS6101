@@ -14,6 +14,7 @@ from core.tools.extract_comments import extract_comments
 from core.tools.get_table_and_columns import get_table_and_columns_by_fuzzy_similarity, get_table_and_columns_by_similarity
 from core.tools.fix_column_names import fix_sql
 from sentence_transformers import SentenceTransformer
+from tokencost import count_string_tokens
 
 
 class BaseAgent(metaclass=abc.ABCMeta):
@@ -333,7 +334,13 @@ class Refiner(BaseAgent):
 
         # run generated_SQL in the database to get the result
         generated_SQL = message['generated_SQL']
-        db_result = self.db_tool.run(generated_SQL)
+        try:
+            db_result = self.db_tool.run(generated_SQL)
+        except Exception as e:
+            db_result = f"error: {str(e)}"
+        if count_string_tokens(db_result) >= 10000:
+            print("db_result is too long")
+            db_result = "too long to display"
         has_error = True
         retry_times = 0
         while has_error and retry_times < self.retry_limit:
@@ -350,7 +357,7 @@ class Refiner(BaseAgent):
             while debugged_SQL is None:
                 try:
                     debugged_SQL = self.llm.debug(prompt)
-                except openai.error.RateLimitError as error:
+                except openai.RateLimitError as error:
                     print(
                         "===============Rate limit error for the classification module:", error)
                     time.sleep(15)
@@ -360,7 +367,10 @@ class Refiner(BaseAgent):
             print("Refiner reply:", debugged_SQL)
             SQL = self.process_reply(debugged_SQL, message)
             generated_SQL = SQL
-            db_result = self.db_tool.run(generated_SQL)
+            try:
+                db_result = self.db_tool.run(generated_SQL)
+            except Exception as e:
+                db_result = f"error: {str(e)}"
             if db_result is None or "error" in db_result or "Error" in db_result or "ERROR" in db_result:
                 has_error = True
                 retry_times += 1
